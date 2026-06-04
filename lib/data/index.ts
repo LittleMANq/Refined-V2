@@ -1,3 +1,9 @@
-// Data access layer (Supabase). The single source of truth for DB access.
-// Generated database types (from the schema in Prompt 3) will be exported from here too.
+// Data access layer (Supabase). The single source of truth for DB access and types.
 export { supabase } from './supabase';
+export * from './types';
+export * from './profiles';
+export * from './pieces';
+export * from './collections';
+export * from './outfits';
+export * from './recommendations';
+export * from './features';
