@@ -43,7 +43,7 @@ function categorize(piece: ClosetPiece): Category {
 const FORMALITY_RANK: { keys: string[]; rank: number }[] = [
   { keys: ['casual', 'relaxed', 'יומיום', 'קזואל', "קז'ואל"], rank: 1 },
   { keys: ['smart', 'סמארט'], rank: 2 },
-  { keys: ['business', 'office', 'עסקי', 'משרד'], rank: 3 },
+  { keys: ['business', 'office', 'עסקי', 'משרד', 'עבודה'], rank: 3 },
   { keys: ['formal', 'evening', 'רשמי', 'ערב', 'אירוע'], rank: 4 },
 ];
 

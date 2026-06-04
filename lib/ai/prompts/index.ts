@@ -19,9 +19,9 @@ const ANALYSIS_JSON_CONTRACT = `Return ONE JSON object and nothing else (no mark
 {
   "body_type": "string",
   "proportions": "string (shoulder/waist/hip balance, build, in one short phrase)",
-  "skin_tone": "string (warm / cool / neutral)",
+  "skin_tone": "string (Hebrew only: חם / קריר / נייטרלי)",
   "color_season": "string (e.g. אביב חם)",
-  "contrast": "string (low / medium / high)",
+  "contrast": "string (Hebrew only: נמוך / בינוני / גבוה)",
   "color_palette": { "flatters": ["שם צבע"], "avoid": ["שם צבע"] },
   "extracted_items": [
     { "type": "string", "color": "string", "pattern": "string",
@@ -34,7 +34,7 @@ const ANALYSIS_JSON_CONTRACT = `Return ONE JSON object and nothing else (no mark
   ],
   "nextItem": { "item": "string", "why": "string (why it is worth buying for them)" }
 }
-Rules: exactly 3 looks. Every Hebrew value must follow the voice rules above. color_palette is warm muted neutrals that suit their coloring (no green, no purple).`;
+Rules: exactly 3 looks. EVERY value is in Hebrew, including skin_tone and contrast (never English words like "warm" or "low"). Every Hebrew value must follow the voice rules above. color_palette is warm muted neutrals that suit their coloring (no green, no purple).`;
 
 /** Vision analysis prompt: the personal-analysis magic moment. */
 export function buildAnalysisPrompt(context: AnalysisContext): { system: string; instruction: string } {

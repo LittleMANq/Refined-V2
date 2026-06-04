@@ -49,4 +49,19 @@ describe('selectOutfit (candidate -> score -> select)', () => {
     expect(selection).not.toBeNull();
     expect(selection!.piece_ids).toContain('d1');
   });
+
+  it('a work-meeting occasion bumps formality and pulls in outerwear', () => {
+    const selection = selectOutfit({
+      ...base,
+      context: { gender: 'woman', occasion: 'פגישת עבודה' },
+      closet: [
+        { id: 't1', type: 'חולצה', color: 'שמנת', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+        { id: 'b1', type: 'מכנסיים', color: 'טאופ', attributes: { silhouette: 'ישר', formality: 'סמארט' } },
+        { id: 'o1', type: 'בלייזר', color: 'חול', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+        { id: 'sh1', type: 'נעליים', color: 'קוניאק' },
+      ],
+    });
+    expect(selection).not.toBeNull();
+    expect(selection!.piece_ids).toContain('o1');
+  });
 });
