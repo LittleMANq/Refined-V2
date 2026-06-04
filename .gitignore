@@ -44,3 +44,7 @@ keys.txt
 # IDE
 .idea/
 .vscode/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,107 @@
+import type { AnalysisResult } from '../analysis/types.ts';
+
+/**
+ * Output guards. The model is instructed to return clean JSON / Hebrew text, but
+ * these are the safety net: extract JSON robustly, validate the contract, and
+ * strip the one fingerprint we never allow (the em dash). On bad input they throw
+ * a clear error so the caller can return a structured failure, never crash.
+ */
+
+/** Replace em/en dashes with a comma. The em dash is a hard ban (CLAUDE.md). */
+export function sanitizeNoEmDash(text: string): string {
+  return text.replace(/\s*[—–]\s*/g, ', ');
+}
+
+/** Pull the first balanced JSON object out of a model response (handles ```json fences). */
+export function extractJson(text: string): unknown {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const body = fenced ? fenced[1] : text;
+  const start = body.indexOf('{');
+  const end = body.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('No JSON object found in model output');
+  }
+  return JSON.parse(body.slice(start, end + 1));
+}
+
+function str(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Invalid analysis output: "${field}" must be a non-empty string`);
+  }
+  return sanitizeNoEmDash(value.trim());
+}
+
+function optStr(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? sanitizeNoEmDash(value.trim()) : undefined;
+}
+
+function strArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === 'string').map((v) => sanitizeNoEmDash(v.trim()));
+}
+
+/** Validate + normalize the analysis JSON into a typed AnalysisResult. */
+export function parseAnalysisResult(raw: unknown): AnalysisResult {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new Error('Invalid analysis output: not an object');
+  }
+  const r = raw as Record<string, unknown>;
+  const palette = (r.color_palette ?? {}) as Record<string, unknown>;
+  const identity = (r.styleIdentity ?? {}) as Record<string, unknown>;
+  const next = (r.nextItem ?? {}) as Record<string, unknown>;
+
+  const looksRaw = Array.isArray(r.looks) ? r.looks : [];
+  const looks = looksRaw.slice(0, 3).map((l) => {
+    const lo = (l ?? {}) as Record<string, unknown>;
+    return { title: str(lo.title, 'looks[].title'), description: str(lo.description, 'looks[].description') };
+  });
+  if (looks.length !== 3) {
+    throw new Error(`Invalid analysis output: expected 3 looks, got ${looks.length}`);
+  }
+
+  const itemsRaw = Array.isArray(r.extracted_items) ? r.extracted_items : [];
+  const extracted_items = itemsRaw.map((i) => {
+    const io = (i ?? {}) as Record<string, unknown>;
+    const attrs = (io.attributes ?? {}) as Record<string, unknown>;
+    return {
+      type: str(io.type, 'extracted_items[].type'),
+      color: optStr(io.color),
+      pattern: optStr(io.pattern),
+      attributes: {
+        fit: optStr(attrs.fit),
+        silhouette: optStr(attrs.silhouette),
+        formality: optStr(attrs.formality),
+      },
+    };
+  });
+
+  return {
+    body_type: str(r.body_type, 'body_type'),
+    proportions: str(r.proportions, 'proportions'),
+    skin_tone: str(r.skin_tone, 'skin_tone'),
+    color_season: str(r.color_season, 'color_season'),
+    contrast: optStr(r.contrast),
+    color_palette: {
+      flatters: strArray(palette.flatters),
+      avoid: strArray(palette.avoid),
+    },
+    extracted_items,
+    styleIdentity: {
+      name: str(identity.name, 'styleIdentity.name'),
+      description: str(identity.description, 'styleIdentity.description'),
+    },
+    bodyInsight: str(r.bodyInsight, 'bodyInsight'),
+    looks,
+    nextItem: {
+      item: str(next.item, 'nextItem.item'),
+      why: str(next.why, 'nextItem.why'),
+    },
+  };
+}
+
+/** The outfit reasoning is the core thesis and must never be empty. */
+export function ensureReasoning(text: string): string {
+  const clean = sanitizeNoEmDash(text).trim();
+  if (!clean) throw new Error('Reasoning generation returned empty text');
+  return clean;
+}
