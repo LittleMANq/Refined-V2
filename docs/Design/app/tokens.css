@@ -1,0 +1,441 @@
+/* ============================================================
+   REFINED — design tokens & base components
+   Luxury AI personal stylist. RTL Hebrew.
+   ============================================================ */
+
+:root {
+  /* palette — the only colors in the system */
+  --ink:        #1B1714;
+  --paper:      #FAF7F2;
+  --surface:    #F1ECE4;
+  --hairline:   #E2DBD0;
+  --secondary:  #8A8178;
+  --gold:       #B08953;
+
+  /* derived tints (same hue family, no new colors) */
+  --ink-90:     rgba(27, 23, 20, 0.90);
+  --ink-60:     rgba(27, 23, 20, 0.60);
+  --ink-12:     rgba(27, 23, 20, 0.12);
+  --ink-06:     rgba(27, 23, 20, 0.06);
+  --gold-14:    rgba(176, 137, 83, 0.14);
+  --gold-28:    rgba(176, 137, 83, 0.28);
+  --paper-0:    rgba(250, 247, 242, 0);
+  --paper-80:   rgba(250, 247, 242, 0.80);
+
+  /* type */
+  --sans: "Heebo", system-ui, -apple-system, sans-serif;
+  --serif: "Frank Ruhl Libre", Georgia, serif;
+  --mono: "Geist Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  /* radii */
+  --r-card: 24px;
+  --r-slot: 20px;
+  --r-pill: 999px;
+  --r-chip: 999px;
+
+  /* shadow — soft, dimensional, warm */
+  --shadow-card: 0 1px 2px rgba(27,23,20,0.04), 0 12px 30px -12px rgba(27,23,20,0.18);
+  --shadow-float: 0 2px 6px rgba(27,23,20,0.06), 0 24px 50px -20px rgba(27,23,20,0.30);
+  --shadow-pill: 0 8px 22px -8px rgba(27,23,20,0.45);
+
+  /* motion */
+  --ease-cinema: cubic-bezier(0.22, 0.61, 0.18, 1);
+  --ease-soft: cubic-bezier(0.33, 0.0, 0.0, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[dir="rtl"] { direction: rtl; }
+
+/* ----------------------------------------------------------
+   TYPE SCALE — hierarchy through weight, not just size
+   ---------------------------------------------------------- */
+.t-serif-hero {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 46px;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+.t-serif-xl {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 38px;
+  line-height: 1.12;
+}
+.t-head {
+  font-weight: 300;
+  font-size: 32px;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+}
+.t-title {
+  font-weight: 300;
+  font-size: 25px;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+}
+.t-subtitle {
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--secondary);
+}
+.t-body {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.t-label {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.t-label-sm {
+  font-weight: 500;
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+.t-mono {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.t-eyebrow {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.muted { color: var(--secondary); }
+.gold { color: var(--gold); }
+
+/* ----------------------------------------------------------
+   PILL BUTTON — full width, fully rounded
+   ---------------------------------------------------------- */
+.pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 58px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 17px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-pill);
+  transition: transform 0.4s var(--ease-cinema), background 0.3s, box-shadow 0.4s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pill:active { transform: scale(0.975); }
+.pill:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
+
+.pill--gold { background: var(--gold); color: var(--paper); }
+.pill--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  box-shadow: none;
+}
+.pill--surface {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 10px;
+}
+
+/* ----------------------------------------------------------
+   SOFT CARD
+   ---------------------------------------------------------- */
+.card {
+  background: #fff;
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+}
+.card--surface { background: var(--surface); box-shadow: none; }
+
+/* hairline divider */
+.hr {
+  height: 1px;
+  background: var(--hairline);
+  border: none;
+  margin: 0;
+}
+
+/* ----------------------------------------------------------
+   3:4 IMAGE SLOT — elongated portrait placeholder
+   warm striped fill + monospace label
+   ---------------------------------------------------------- */
+.slot {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-slot);
+  overflow: hidden;
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(120% 80% at 28% 18%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 46%),
+    linear-gradient(157deg, rgba(255,255,255,0.22) 0%, rgba(27,23,20,0) 40%, rgba(27,23,20,0.10) 100%),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 11px,
+      rgba(176,137,83,0.05) 11px,
+      rgba(176,137,83,0.05) 12px
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    inset 0 -34px 50px -34px rgba(27,23,20,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slot__label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  text-align: center;
+  padding: 4px 10px;
+  background: var(--paper-80);
+  border-radius: 6px;
+  backdrop-filter: blur(2px);
+}
+.slot--tone-a { background-color: #E9E1D5; }
+.slot--tone-b { background-color: #E3DACD; }
+.slot--tone-c { background-color: #EEE7DC; }
+.slot--ink {
+  background-color: #2A2420;
+  background-image:
+    radial-gradient(120% 80% at 30% 16%, rgba(176,137,83,0.30) 0%, rgba(176,137,83,0) 50%),
+    linear-gradient(157deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.28) 100%),
+    repeating-linear-gradient(-45deg, transparent 0, transparent 11px,
+      rgba(176,137,83,0.14) 11px, rgba(176,137,83,0.14) 12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -40px 60px -34px rgba(0,0,0,0.5);
+}
+.slot--ink .slot__label { background: rgba(27,23,20,0.55); color: #D8CFC2; }
+
+/* ----------------------------------------------------------
+   CHIPS / filter pills
+   ---------------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: var(--r-chip);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--secondary);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+.chip--on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ----------------------------------------------------------
+   PROGRESS — fills RIGHT to LEFT (RTL)
+   ---------------------------------------------------------- */
+.progress {
+  position: relative;
+  height: 3px;
+  width: 100%;
+  background: var(--hairline);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress__fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gold);
+  border-radius: 999px;
+  transition: width 0.6s var(--ease-cinema);
+}
+
+/* ----------------------------------------------------------
+   DETECTION DOT
+   ---------------------------------------------------------- */
+.dot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 12.5px;
+  box-shadow: 0 4px 12px rgba(27,23,20,0.25);
+  transform: translate(50%, -50%);
+}
+
+/* selection ring (archetype) */
+.ring-select {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  pointer-events: none;
+}
+.ring-select--on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px var(--gold-14);
+}
+
+/* small check badge */
+.check-badge {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 10px;
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.3s var(--ease-cinema);
+}
+.check-badge--on { opacity: 1; transform: scale(1); }
+
+/* scrollbars hidden for app feel */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ----------------------------------------------------------
+   SHARED ENTRANCE ANIMATIONS
+   ---------------------------------------------------------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.anim-rise { animation: rise 0.7s var(--ease-cinema) both; }
+.anim-fade { animation: fade 0.8s var(--ease-soft) both; }
+
+/* analysis scan sweep */
+@keyframes sweep {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(560%); opacity: 0; }
+}
+.scan-sweep {
+  position: absolute;
+  inset-inline: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(176,137,83,0), rgba(176,137,83,0.35), rgba(176,137,83,0));
+  animation: sweep 2.4s var(--ease-soft) infinite;
+  pointer-events: none;
+}
+
+/* staged reveal helper — set --d for delay */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(22px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.stage-item {
+  opacity: 0;
+}
+.stage-on .stage-item {
+  animation: revealUp 0.9s var(--ease-cinema) both;
+  animation-delay: var(--d, 0s);
+}
+/* settled fallback — guarantees final visibility even if rAF is throttled */
+.stage-settled .stage-item {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise, .anim-fade, .stage-on .stage-item { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+  .scan-sweep { display: none; }
+}
+
+/* gentle scroll-hint bob */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(5px); }
+}
+.scroll-hint .icon-bob, .scroll-hint svg { animation: bob 1.8s var(--ease-soft) infinite; }
+
+/* bottom sheet slide up */
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-up { animation: sheetUp 0.5s var(--ease-cinema) both; }
+@keyframes scrim { from { opacity: 0; } to { opacity: 1; } }
+.scrim-in { animation: scrim 0.4s ease both; }
+
+/* calm floating loop (loading / empty motifs) */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50%      { transform: translateY(-7px) rotate(var(--rot, 0deg)); }
+}
+.floaty { animation: floaty 3.4s ease-in-out infinite; }
+
+/* soft pulse */
+@keyframes pulseRing {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.5); opacity: 0; }
+  100% { opacity: 0; }
+}
+.pulse-ring { animation: pulseRing 2.4s var(--ease-soft) infinite; }
+
+/* indeterminate loading bar (RTL, anchored right) */
+@keyframes loadingBar { 0% { width: 12%; } 50% { width: 80%; } 100% { width: 12%; } }
+.loading-bar { animation: loadingBar 2.2s var(--ease-soft) infinite; }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Refined — אב טיפוס</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=Frank+Ruhl+Libre:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="app/tokens.css" />
+<style>
+  :root { --mono: "JetBrains Mono", ui-monospace, monospace; }
+  html, body { background: #E6DFD4; }
+  .screen-enter { animation: screenEnter 0.55s cubic-bezier(0.22,0.61,0.18,1) both; }
+  @keyframes screenEnter {
+    from { transform: translateY(9px) scale(0.994); }
+    to   { transform: translateY(0) scale(1); }
+  }
+  .nav-btn {
+    width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(27,23,20,0.12);
+    background: rgba(250,247,242,0.7); color: #1B1714; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .nav-btn:hover { background: #fff; }
+  .nav-btn:active { transform: scale(0.94); }
+  @media (prefers-reduced-motion: reduce) { .screen-enter { animation: none; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="app/ui.jsx"></script>
+<script type="text/babel" src="app/screens-1.jsx"></script>
+<script type="text/babel" src="app/screens-2.jsx"></script>
+<script type="text/babel" src="app/screens-3.jsx"></script>
+<script type="text/babel" src="app/screens-4.jsx"></script>
+<script type="text/babel" src="app/screens-5.jsx"></script>
+<script type="text/babel" src="app/app.jsx"></script>
+</body>
+</html>
