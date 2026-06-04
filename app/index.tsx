@@ -1,28 +1,51 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  colors,
+  Eyebrow,
+  PillButton,
+  SerifHero,
+  spacing,
+  Text,
+  Wordmark,
+} from '@/components';
 import { useTranslation } from '@/i18n';
 
-// Brand tokens are inlined here ONLY for this placeholder. The real theme module
-// (single source of truth) arrives with the design system in Prompt 2.
-const PAPER = '#FAF7F2';
-const INK = '#1B1714';
-const GOLD = '#B08953';
-const SECONDARY = '#8A8178';
-
+/**
+ * Placeholder Today screen. Real Today (daily look + reasoning) is built later;
+ * for now it boots the app and shows the design system is wired (fonts, RTL,
+ * tokens, components). Strings come from i18n.
+ */
 export default function TodayScreen() {
   const { t, toggleLocale } = useTranslation();
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
-        <Text style={styles.brand}>{t.app.name}</Text>
-        <Text style={styles.title}>{t.today.placeholderTitle}</Text>
-        <Text style={styles.body}>{t.today.placeholderBody}</Text>
+      <View style={styles.header}>
+        <Wordmark />
+      </View>
 
-        <Pressable accessibilityRole="button" style={styles.pill} onPress={toggleLocale}>
-          <Text style={styles.pillText}>{t.common.switchLanguage}</Text>
-        </Pressable>
+      <View style={styles.content}>
+        <Eyebrow style={styles.eyebrow}>{t.app.name}</Eyebrow>
+        <SerifHero>{t.today.placeholderTitle}</SerifHero>
+        <Text variant="subtitle" style={styles.body}>
+          {t.today.placeholderBody}
+        </Text>
+      </View>
+
+      <View style={styles.footer}>
+        <PillButton variant="surface" label={t.common.switchLanguage} onPress={toggleLocale} />
+        {__DEV__ ? (
+          <Link href="/gallery" asChild>
+            <Pressable style={styles.galleryLink}>
+              <Text variant="label" color={colors.secondary} align="center">
+                {t.today.openGallery}
+              </Text>
+            </Pressable>
+          </Link>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -31,44 +54,31 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: PAPER,
+    backgroundColor: colors.paper,
+  },
+  header: {
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.gutter,
   },
   content: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
+    paddingHorizontal: spacing.gutter,
   },
-  brand: {
-    color: GOLD,
-    fontSize: 14,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  title: {
-    color: INK,
-    fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
+  eyebrow: {
+    marginBottom: spacing.lg,
   },
   body: {
-    color: SECONDARY,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
+    marginTop: spacing.md,
+    maxWidth: 300,
   },
-  pill: {
-    marginTop: 24,
-    backgroundColor: INK,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 999,
+  footer: {
+    paddingHorizontal: spacing.gutter,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
-  pillText: {
-    color: PAPER,
-    fontSize: 15,
-    fontWeight: '600',
+  galleryLink: {
+    alignSelf: 'center',
+    padding: spacing.xs,
   },
 });

@@ -40,3 +40,7 @@ keys.txt
 # generated native folders
 /ios
 /android
+
+# IDE
+.idea/
+.vscode/

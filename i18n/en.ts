@@ -8,6 +8,7 @@ export const en = {
     title: 'Today',
     placeholderTitle: 'Foundation ready',
     placeholderBody: 'Your daily look will start here. Just a moment.',
+    openGallery: 'Design system',
   },
   common: {
     switchLanguage: 'עברית',

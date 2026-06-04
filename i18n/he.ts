@@ -10,6 +10,7 @@ export const he = {
     title: 'היום',
     placeholderTitle: 'הבסיס מוכן',
     placeholderBody: 'כאן יתחיל הלוק היומי שלך. עוד רגע מתחילים.',
+    openGallery: 'מערכת העיצוב',
   },
   common: {
     switchLanguage: 'English',
