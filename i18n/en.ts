@@ -1,16 +1,210 @@
-// English dictionary. Mirror of he.ts (identical keys).
-// Architected bilingual so English flips on later with zero rework.
-export const en = {
-  app: {
-    name: 'Refined',
-  },
-  today: {
-    title: 'Today',
-    placeholderTitle: 'Foundation ready',
-    placeholderBody: 'Your daily look will start here. Just a moment.',
-    openGallery: 'Design system',
-  },
-  common: {
-    switchLanguage: 'עברית',
-  },
-};
+import type { Gender } from './gender';
+
+// English dictionary. Mirror of he.ts (identical key paths).
+// Architected bilingual so English flips on later with zero rework. English has
+// no gendered-singular split, so every variant resolves to the same string; the
+// `g(woman, other)` calls stay only to keep the shape identical to he.ts.
+export function en(gender: Gender) {
+  const fem = gender === 'woman';
+  const g = (woman: string, other: string) => (fem ? woman : other);
+
+  return {
+    app: {
+      name: 'Refined',
+    },
+    common: {
+      continue: g('Continue', 'Continue'),
+      skip: g('Skip', 'Skip'),
+      maybeLater: 'Maybe later',
+      notNow: 'Not now',
+      retry: g('Try again', 'Try again'),
+      switchLanguage: 'עברית',
+      selected: 'Selected',
+      pieces: 'pieces',
+      look: 'Look',
+    },
+    today: {
+      greeting: 'Good morning',
+      identityEyebrow: 'Your style identity',
+      todayLookEyebrow: "Today's look",
+      whyThis: 'Why this?',
+      paletteLabel: 'Your palette',
+      closetCard: 'My closet',
+      noLookTitle: 'Your first look is waiting',
+      noLookBody: 'Add a few more pieces and the stylist starts composing.',
+      openGallery: 'Design system',
+      loading: 'One moment',
+    },
+    onboarding: {
+      intro: {
+        skip: g('Skip', 'Skip'),
+        next: g('Continue', 'Continue'),
+        start: g("Let's begin", "Let's begin"),
+        slides: [
+          {
+            eyebrow: 'Personal stylist',
+            title: 'Style\nthat gets you',
+            body: 'A few photos, and in a minute a style identity and real looks, exactly yours.',
+          },
+          {
+            eyebrow: 'Analysis',
+            title: 'A personal read\nthat starts with you',
+            body: 'Body, proportions and skin tone. We understand you before the clothes.',
+          },
+          {
+            eyebrow: 'Looks',
+            title: 'Looks built\nexactly for you',
+            body: 'Every look comes with a short why it works for you.',
+          },
+          {
+            eyebrow: 'Closet',
+            title: 'A stylist that knows\nyour wardrobe',
+            body: 'Shoot once, and your clothes turn into looks.',
+          },
+        ],
+      },
+      context: {
+        eyebrow: 'Nice to meet you',
+        title: "Who's dressing?",
+        subtitle: 'We tailor the analysis, the looks and the language to you.',
+        genderWoman: 'Woman',
+        genderMan: 'Man',
+        genderUnspecified: 'Prefer not to say',
+        contextQuestion: g('What do you mostly dress for?', 'What do you mostly dress for?'),
+        contextWork: 'Work and office',
+        contextCasual: 'Everyday and casual',
+        contextEvening: 'Evening and events',
+        contextSmart: 'Smart casual',
+      },
+      archetype: {
+        eyebrow: 'Your inspiration',
+        title: 'What draws you in?',
+        subtitle: g(
+          'Pick the worlds that speak to you. More than one is fine.',
+          'Pick the worlds that speak to you. More than one is fine.',
+        ),
+        chooseAtLeastOne: g('Pick at least one', 'Pick at least one'),
+        quiet: { label: 'Quiet luxury', sub: 'Rich minimalism' },
+        street: { label: 'Street', sub: 'Urban and bold' },
+        minimal: { label: 'Minimal', sub: 'Clean and precise' },
+        high: { label: 'High fashion', sub: 'Pronounced avant-garde' },
+        sport: { label: 'Sport chic', sub: 'Considered athleisure' },
+        classic: { label: 'Classic', sub: 'Timeless and measured' },
+      },
+      capture: {
+        eyebrow: 'Photo',
+        title: 'Full-body photo',
+        subtitle: g(
+          'Stand straight, arms free. The clearer the photo, the sharper the analysis.',
+          'Stand straight, arms free. The clearer the photo, the sharper the analysis.',
+        ),
+        modeFullBody: 'Full-body mode',
+        frameHint: g('Stand in the center of the frame', 'Stand in the center of the frame'),
+        tipFullBody: 'Full body in frame',
+        tipLight: 'Natural light',
+        tipBackground: 'Clean background',
+        takePhoto: g('Take a photo', 'Take a photo'),
+        chooseGallery: g('Choose from gallery', 'Choose from gallery'),
+        privacy: 'Your photos stay private',
+        photo: 'Photo',
+        analyze: g('Analyze my style', 'Analyze my style'),
+        cameraDenied: 'Camera access is needed to shoot. You can also choose from the gallery.',
+        galleryDenied: 'Photo access is needed to choose a photo.',
+      },
+      analysis: {
+        working: 'Analyzing your proportions, tone and style…',
+        done: 'Your analysis is ready',
+        phases: [
+          'Straightening the photo',
+          'Reading proportions and height',
+          'Reading your skin tone',
+          'Detecting the pieces you wore',
+          'Composing your style identity',
+        ],
+        seeResults: g('See what we found', 'See what we found'),
+      },
+      error: {
+        eyebrow: 'Almost there',
+        title: "We couldn't analyze\nthe photo",
+        body: 'Maybe it is a little cropped or dark. A full-body photo in good light works great.',
+        tryAnother: g('Try another photo', 'Try another photo'),
+        chooseGallery: g('Choose from gallery', 'Choose from gallery'),
+      },
+      review: {
+        eyebrow: 'Review',
+        found: 'We found',
+        items: 'pieces',
+        subtitle: g('Swipe right to keep, left to remove.', 'Swipe right to keep, left to remove.'),
+        item: 'Piece',
+        editDetails: g('Edit details', 'Edit details'),
+        remove: g('Remove', 'Remove'),
+        keep: g('Keep', 'Keep'),
+        savedPrefix: 'You kept',
+        savedSuffix: 'pieces',
+        doneBody: 'They join your closet and will feed your next looks.',
+        addToCloset: g('Add to closet', 'Add to closet'),
+        remainingPrefix: '',
+        remainingSuffix: 'left to review',
+      },
+      taste: {
+        eyebrow: 'Personal taste',
+        title: 'What feels closer to you?',
+        subtitle: g(
+          'Two approaches, the same elegance. Pick yours.',
+          'Two approaches, the same elegance. Pick yours.',
+        ),
+        softLabel: 'Soft lines',
+        softNote: 'Draping, easy, flowing',
+        sharpLabel: 'Clean lines',
+        sharpNote: 'Structured, sharp, precise',
+        fitQuestion: g('How do you like a garment to sit?', 'How do you like a garment to sit?'),
+        fitTailored: 'Close to the body',
+        fitRegular: 'Regular',
+        fitRelaxed: 'Relaxed',
+        cta: g('See my style identity', 'See my style identity'),
+      },
+      reveal: {
+        eyebrow: 'Your style identity',
+        scrollHint: g('Scroll to see more', 'Scroll to see more'),
+        paletteLabel: 'The colors that flatter you',
+        looksLabel: 'Your first three looks',
+        nextItemLabel: 'The next piece worth it for you',
+        feelsRight: 'Feels right?',
+        spotOn: 'Spot on',
+        fineTune: 'Fine-tune',
+        save: g('Save my style identity', 'Save my style identity'),
+        saving: 'Saving…',
+        saveError: "We couldn't save. Let's try again.",
+      },
+      signup: {
+        identityLabel: 'Your style identity',
+        paletteLabel: 'Your palette',
+        title: g('Save your style\nidentity', 'Save your style\nidentity'),
+        subtitle: g(
+          'So we keep your analysis, closet and looks, and bring you right back where you left off.',
+          'So we keep your analysis, closet and looks, and bring you right back where you left off.',
+        ),
+        apple: g('Continue with Apple', 'Continue with Apple'),
+        google: g('Continue with Google', 'Continue with Google'),
+        or: 'or',
+        emailPlaceholder: 'Your email',
+        emailCta: g('Continue with email', 'Continue with email'),
+        emailSent: 'We sent you a verification link. You can keep going meanwhile.',
+        emailError: "That email doesn't look right. Try again?",
+        maybeLater: 'Maybe later',
+      },
+      permissions: {
+        title: g('Get a tailored look\nevery morning', 'Get a tailored look\nevery morning'),
+        subtitle: 'One calm notification a day, tuned to the weather and your calendar. No noise.',
+        notifBrand: 'REFINED',
+        notifNow: 'now',
+        notifTitle: "Today's look is ready",
+        notifBody: 'Good morning. Pleasant weather today, here is what will go great on you.',
+        dailyLook: 'Daily look',
+        dailyLookDetail: 'Sandy brown, light for 24°',
+        enable: g('Enable notifications', 'Enable notifications'),
+        notNow: 'Not now',
+      },
+    },
+  };
+}

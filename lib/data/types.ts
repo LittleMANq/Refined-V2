@@ -37,6 +37,7 @@ export interface Analysis {
 
 export interface StyleIdentity {
   name?: string;
+  description?: string; // one warm sentence (the reveal + You profile read it)
   archetypes?: string[];
   confidence_notes?: string; // future
 }

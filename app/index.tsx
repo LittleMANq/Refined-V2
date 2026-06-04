@@ -1,53 +1,51 @@
-import { Link } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import {
-  colors,
-  Eyebrow,
-  PillButton,
-  SerifHero,
-  spacing,
-  Text,
-  Wordmark,
-} from '@/components';
+import { colors, Text, Wordmark } from '@/components';
 import { useTranslation } from '@/i18n';
+import { getProfile, supabase } from '@/lib/data';
+import { ROUTES } from '@/lib/onboarding';
 
 /**
- * Placeholder Today screen. Real Today (daily look + reasoning) is built later;
- * for now it boots the app and shows the design system is wired (fonts, RTL,
- * tokens, components). Strings come from i18n.
+ * Entry gate. Decides where a launch lands: a returning user who already finished
+ * onboarding (their profile carries a Style Identity) goes straight to Today; a new
+ * launch starts the onboarding magic moment. This is what makes the persisted
+ * analysis survive a reload, the session restores from storage and we route to Today.
  */
-export default function TodayScreen() {
-  const { t, toggleLocale } = useTranslation();
+export default function IndexGate() {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const user = data.session?.user;
+        if (user) {
+          const profile = await getProfile(user.id);
+          if (active && profile?.style_identity?.name) {
+            router.replace(ROUTES.today);
+            return;
+          }
+        }
+      } catch {
+        // fall through to onboarding
+      }
+      if (active) router.replace(ROUTES.intro);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <Wordmark />
-      </View>
-
-      <View style={styles.content}>
-        <Eyebrow style={styles.eyebrow}>{t.app.name}</Eyebrow>
-        <SerifHero>{t.today.placeholderTitle}</SerifHero>
-        <Text variant="subtitle" style={styles.body}>
-          {t.today.placeholderBody}
-        </Text>
-      </View>
-
-      <View style={styles.footer}>
-        <PillButton variant="surface" label={t.common.switchLanguage} onPress={toggleLocale} />
-        {__DEV__ ? (
-          <Link href="/gallery" asChild>
-            <Pressable style={styles.galleryLink}>
-              <Text variant="label" color={colors.secondary} align="center">
-                {t.today.openGallery}
-              </Text>
-            </Pressable>
-          </Link>
-        ) : null}
-      </View>
-    </SafeAreaView>
+    <View style={styles.screen}>
+      <Wordmark size={22} />
+      <Text variant="mono" color={colors.secondary} style={styles.label}>
+        {t.today.loading}
+      </Text>
+    </View>
   );
 }
 
@@ -55,30 +53,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.paper,
-  },
-  header: {
-    paddingTop: spacing.xl,
-    paddingHorizontal: spacing.gutter,
-  },
-  content: {
-    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.gutter,
+    gap: 14,
   },
-  eyebrow: {
-    marginBottom: spacing.lg,
-  },
-  body: {
-    marginTop: spacing.md,
-    maxWidth: 300,
-  },
-  footer: {
-    paddingHorizontal: spacing.gutter,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  galleryLink: {
-    alignSelf: 'center',
-    padding: spacing.xs,
-  },
+  label: {},
 });

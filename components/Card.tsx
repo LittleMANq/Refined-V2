@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { colors, radii, shadows } from './theme';
 
@@ -8,7 +8,7 @@ type Props = {
   /** soft = white with a warm soft shadow · surface = flat surface tone, no shadow. */
   variant?: 'soft' | 'surface';
   padding?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** Soft card. The default container for grouped content. */

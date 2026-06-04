@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import type { ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -22,7 +22,7 @@ type Props = {
   /** Start scale for hero moments (e.g. 0.92 grows to 1). Omit to skip scaling. */
   fromScale?: number;
   duration?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 /**

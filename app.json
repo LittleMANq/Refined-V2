@@ -34,6 +34,19 @@
             "imageWidth": 76
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Refined uses your photos to analyse your proportions and coloring, privately.",
+          "cameraPermission": "Refined uses the camera to take the full-body photo your analysis is built from."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#B08953"
+        }
       ]
     ],
     "experiments": {
