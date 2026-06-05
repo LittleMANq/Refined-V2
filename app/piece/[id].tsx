@@ -11,6 +11,7 @@ import {
   Hairline,
   PillButton,
   radii,
+  shadows,
   spacing,
   Text,
   Wordmark,
@@ -145,21 +146,27 @@ export default function PieceDetailScreen() {
         onBack={() => router.back()}
         action={
           <Pressable onPress={() => (editing ? save.mutate() : startEdit())} hitSlop={10}>
-            <Text variant="label" color={colors.ink}>
-              {editing ? p.save : p.edit}
-            </Text>
+            {editing ? (
+              <Text variant="label" color={colors.ink}>
+                {p.save}
+              </Text>
+            ) : (
+              <Icon name="edit" size={21} color={colors.ink} />
+            )}
           </Pressable>
         }
       />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <GarmentSlot
-            tone="a"
-            radius={radii.card}
-            style={styles.heroSlot}
-            source={heroUri ? { uri: heroUri } : undefined}
-          />
+        <View style={styles.heroShadow}>
+          <View style={styles.hero}>
+            <GarmentSlot
+              tone="a"
+              radius={radii.card}
+              style={styles.heroSlot}
+              source={heroUri ? { uri: heroUri } : undefined}
+            />
+          </View>
         </View>
 
         <Text variant="head" style={styles.name}>
@@ -231,7 +238,7 @@ function Header({ title, onBack, action }: { title: string; onBack: () => void; 
       <Pressable onPress={onBack} hitSlop={10} style={styles.headerBtn}>
         <Icon name="chevron-right" size={24} color={colors.ink} />
       </Pressable>
-      <Text variant="mono" color={colors.secondary}>
+      <Text variant="monoSm" color={colors.secondary}>
         {title}
       </Text>
       <View style={styles.headerAction}>{action}</View>
@@ -246,31 +253,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.g22,
+    paddingTop: spacing.g12,
     paddingBottom: spacing.sm,
   },
   headerBtn: { padding: 4, minWidth: 40 },
   headerAction: { minWidth: 40, alignItems: 'flex-end' },
-  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  scroll: { paddingHorizontal: spacing.g22, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  heroShadow: { borderRadius: radii.card, backgroundColor: colors.surface, ...shadows.float },
   hero: { borderRadius: radii.card, overflow: 'hidden' },
   heroSlot: { width: '100%', aspectRatio: 3 / 4 },
-  name: { marginTop: spacing.lg, fontSize: 27 },
+  name: { marginTop: spacing.g20, fontSize: 27, lineHeight: 32 },
   subtitle: { marginTop: spacing.xs },
   needs: { marginTop: spacing.lg },
   needsBody: { marginTop: spacing.xs },
   needsCta: { marginTop: spacing.md },
   attrs: { marginTop: spacing.lg, overflow: 'hidden' },
-  divider: { marginHorizontal: spacing.md },
+  divider: { marginHorizontal: spacing.g16 },
   attrRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.g16,
     paddingVertical: 14,
   },
-  attrValue: { flexShrink: 1 },
+  attrValue: { flexShrink: 1, fontSize: 14.5 },
   input: {
     flex: 1,
     textAlign: 'right',
@@ -279,5 +287,5 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.xl },
-  footer: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  footer: { paddingHorizontal: spacing.g22, paddingTop: spacing.md, paddingBottom: spacing.g20 },
 });

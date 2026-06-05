@@ -38,7 +38,7 @@ function MethodCard({
 }) {
   return (
     <Pressable style={styles.method} onPress={locked ? undefined : onPress} disabled={locked}>
-      <Card padding={spacing.md} style={[styles.methodCard, locked && styles.methodLocked]}>
+      <Card padding={spacing.g16} style={[styles.methodCard, locked && styles.methodLocked]}>
         <View style={styles.methodIcon}>
           <Icon name={icon} size={21} color={colors.gold} />
         </View>
@@ -311,7 +311,7 @@ export default function ClosetAddScreen() {
               <MethodCard icon="mail" label={a.gmail} sub={a.gmailSub} locked soon={a.soon} />
             </View>
             <View style={styles.cell}>
-              <MethodCard icon="maximize" label={a.barcode} sub={a.barcodeSub} locked soon={a.soon} />
+              <MethodCard icon="barcode" label={a.barcode} sub={a.barcodeSub} locked soon={a.soon} />
             </View>
           </View>
 
@@ -329,11 +329,11 @@ export default function ClosetAddScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   handle: { width: 38, height: 4, borderRadius: 999, backgroundColor: colors.hairline, alignSelf: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
-  body: { paddingHorizontal: spacing.gutter },
+  body: { paddingHorizontal: spacing.g22 },
   eyebrow: { marginBottom: spacing.sm },
-  title: { fontSize: 26 },
-  subtitle: { marginTop: spacing.xs, marginBottom: spacing.xl },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  title: { fontSize: 26, lineHeight: 31 },
+  subtitle: { fontSize: 15, marginTop: spacing.xs, marginBottom: spacing.g20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g12 },
   cell: { width: '47%', flexGrow: 1 },
   // pick (detected garments) screen
   pickWrap: { flex: 1 },
