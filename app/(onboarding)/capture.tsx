@@ -83,6 +83,7 @@ export default function CaptureScreen() {
       onBack={() => router.back()}
       step={3}
       total={ONBOARDING_STEPS}
+      bodyPaddingTop={spacing.g22}
       footer={
         <View style={styles.footer}>
           {hasPhotos ? (
@@ -109,7 +110,7 @@ export default function CaptureScreen() {
         </View>
       }
     >
-      <ScreenHeader eyebrow={cap.eyebrow} title={cap.title} subtitle={cap.subtitle} style={styles.header} />
+      <ScreenHeader eyebrow={cap.eyebrow} title={cap.title} subtitle={cap.subtitle} titleSize={30} style={styles.header} />
 
       <View style={styles.frameWrap}>
         <View style={styles.frame}>

@@ -34,7 +34,7 @@ export default function ArchetypeScreen() {
         />
       }
     >
-      <ScreenHeader eyebrow={a.eyebrow} title={a.title} subtitle={a.subtitle} style={styles.header} />
+      <ScreenHeader eyebrow={a.eyebrow} title={a.title} subtitle={a.subtitle} titleSize={30} style={styles.header} />
       <View style={styles.grid}>
         {tiles.map((tile) => (
           <View key={tile.id} style={styles.cell}>
@@ -53,7 +53,7 @@ export default function ArchetypeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.lg },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingBottom: spacing.lg },
+  header: { marginBottom: spacing.g22 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g12, paddingBottom: spacing.g16 },
   cell: { width: '47%', flexGrow: 1 },
 });

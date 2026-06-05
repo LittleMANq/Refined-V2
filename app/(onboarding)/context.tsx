@@ -47,7 +47,7 @@ export default function ContextScreen() {
         />
       }
     >
-      <ScreenHeader eyebrow={c.eyebrow} title={c.title} subtitle={c.subtitle} style={styles.header} />
+      <ScreenHeader eyebrow={c.eyebrow} title={c.title} subtitle={c.subtitle} titleSize={30} style={styles.header} />
 
       <View style={styles.genders}>
         {genders.map((g) => (
@@ -79,7 +79,7 @@ export default function ContextScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.xl },
+  header: { marginBottom: spacing.g26 },
   genders: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xxl },
   contextLabel: { marginBottom: spacing.md },
   contexts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

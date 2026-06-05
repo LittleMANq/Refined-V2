@@ -45,6 +45,7 @@ export default function ReviewScreen() {
       onBack={() => router.back()}
       step={4}
       total={ONBOARDING_STEPS}
+      bodyPaddingTop={spacing.g16}
       footer={
         <PillButton label={r.addToCloset} onPress={() => router.push(ROUTES.taste)} />
       }
@@ -53,6 +54,7 @@ export default function ReviewScreen() {
         eyebrow={r.eyebrow}
         title={`${r.found} ${items.length} ${r.items}`}
         subtitle={r.subtitle}
+        titleSize={28}
         style={styles.header}
       />
 

@@ -152,7 +152,7 @@ export default function RevealScreen() {
               </Text>
             ) : null}
           </View>
-          <PaletteStrip palette={analysis.color_palette.flatters} showNames />
+          <PaletteStrip palette={analysis.color_palette.flatters} showNames radius={radii.slotSm} />
         </View>
 
         {/* THREE FIRST LOOKS */}
@@ -210,7 +210,7 @@ export default function RevealScreen() {
               }}
               style={styles.confirmChipOff}
             >
-              <Icon name="refresh-cw" size={16} color={colors.ink} />
+              <Icon name="swap" size={16} color={colors.ink} />
               <Text variant="label">{rv.fineTune}</Text>
             </Pressable>
           </View>
@@ -234,23 +234,23 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
   beat1: {
-    minHeight: 560,
+    minHeight: 648,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  float: { position: 'absolute', opacity: 0.8 },
-  floatSlot: { opacity: 0.85 },
+  float: { position: 'absolute', opacity: 0.78 },
+  floatSlot: {},
   nameBlock: { alignItems: 'center' },
-  eyebrow: { marginBottom: spacing.lg },
-  rule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
+  eyebrow: { marginBottom: spacing.g22 },
+  rule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.g22 },
   ruleLine: { width: 28, height: 1, backgroundColor: colors.gold },
   ruleDot: { width: 5, height: 5, borderRadius: 999, backgroundColor: colors.gold, marginHorizontal: 8 },
-  name: { fontSize: 54, lineHeight: 58 },
-  season: { marginTop: spacing.lg },
+  name: { fontSize: 60, lineHeight: 60 },
+  season: { marginTop: spacing.g26 },
   scrollHint: { position: 'absolute', bottom: 0, alignItems: 'center', gap: 4 },
   divider: { marginBottom: spacing.xl },
   description: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
     lineHeight: 33,
   },
   insight: {
@@ -295,6 +295,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.hairline,
   },
-  footer: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md, paddingBottom: spacing.sm, gap: spacing.sm },
+  footer: { paddingHorizontal: spacing.g22, paddingTop: spacing.md, paddingBottom: spacing.g20, gap: spacing.sm },
   saveError: {},
 });

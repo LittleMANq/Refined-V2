@@ -29,7 +29,7 @@ export default function TasteScreen() {
       total={ONBOARDING_STEPS}
       footer={<PillButton label={ts.cta} disabled={!ready} onPress={() => router.push(ROUTES.reveal)} />}
     >
-      <ScreenHeader eyebrow={ts.eyebrow} title={ts.title} subtitle={ts.subtitle} style={styles.header} />
+      <ScreenHeader eyebrow={ts.eyebrow} title={ts.title} subtitle={ts.subtitle} titleSize={30} style={styles.header} />
 
       <View style={styles.tasteGrid}>
         {tasteOptions.map((opt) => (
@@ -64,10 +64,10 @@ export default function TasteScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.lg },
-  tasteGrid: { flexDirection: 'row', gap: spacing.md },
+  header: { marginBottom: spacing.g22 },
+  tasteGrid: { flexDirection: 'row', gap: spacing.g12 },
   tasteCell: { flex: 1 },
-  fitLabel: { marginTop: spacing.xxl, marginBottom: spacing.md },
+  fitLabel: { marginTop: spacing.xxl, marginBottom: spacing.g12 },
   fits: { flexDirection: 'row', gap: spacing.sm },
   fitChip: { flex: 1, justifyContent: 'center', height: 46 },
 });

@@ -53,6 +53,12 @@ export const typeScale = {
     fontSize: 14,
     lineHeight: 20,
   },
+  // The quiet text button (gallery .btn-text): 15px medium, secondary by default.
+  btnText: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 15,
+    lineHeight: 20,
+  },
   labelSm: {
     fontFamily: fontFamilies.sansMedium,
     fontSize: 12.5,

@@ -16,8 +16,8 @@ type Props = {
 /** A first-look row: a 3:4 slot, the look number, its title, and the short why. */
 export function LookCard({ caption, title, why, tone = 'a' }: Props) {
   return (
-    <Card padding={spacing.md} style={styles.card}>
-      <GarmentSlot tone={tone} width={80} radius={radii.md} />
+    <Card padding={spacing.g12} style={styles.card}>
+      <GarmentSlot tone={tone} width={80} radius={radii.md} label="LOOK" />
       <View style={styles.body}>
         <Text variant="mono" color={colors.gold} style={styles.caption}>
           {caption}
@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
   },
   why: {
     fontSize: 14,
+    lineHeight: 20,
     marginTop: 3,
   },
 });

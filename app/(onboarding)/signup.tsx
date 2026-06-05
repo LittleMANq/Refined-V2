@@ -9,6 +9,7 @@ import {
   Hairline,
   PillButton,
   radii,
+  fontFamilies,
   ScreenHeader,
   spacing,
   Text,
@@ -53,6 +54,7 @@ export default function SignupScreen() {
   return (
     <StepScreen
       onBack={() => router.back()}
+      bodyPaddingTop={spacing.sm}
       footer={
         <View style={styles.footer}>
           <PillButton
@@ -62,7 +64,7 @@ export default function SignupScreen() {
             onPress={continueWithEmail}
           />
           <Pressable onPress={proceed} hitSlop={8} style={styles.maybeLater}>
-            <Text variant="label" color={colors.secondary}>
+            <Text variant="btnText" color={colors.secondary}>
               {su.maybeLater}
             </Text>
           </Pressable>
@@ -78,7 +80,9 @@ export default function SignupScreen() {
               <Text variant="mono" color={colors.gold} style={styles.identityEyebrow}>
                 {su.identityLabel}
               </Text>
-              <Text variant="serifTitle">{analysis.styleIdentity.name}</Text>
+              <Text variant="serifTitle" style={styles.identityName}>
+                {analysis.styleIdentity.name}
+              </Text>
             </View>
           </View>
           <Hairline style={styles.identityRule} />
@@ -93,19 +97,19 @@ export default function SignupScreen() {
         </Card>
       ) : null}
 
-      <ScreenHeader title={su.title} subtitle={su.subtitle} style={styles.header} />
+      <ScreenHeader title={su.title} subtitle={su.subtitle} titleSize={28} style={styles.header} />
 
       <PillButton
         label={su.apple}
         onPress={proceed}
-        icon={<Icon name="smartphone" size={20} color={colors.paper} />}
+        icon={<Icon name="apple" size={20} color={colors.paper} />}
       />
       <PillButton
         variant="ghost"
         label={su.google}
         onPress={proceed}
         style={styles.googleBtn}
-        icon={<Icon name="globe" size={20} color={colors.ink} />}
+        icon={<Icon name="google" size={20} color={colors.ink} />}
       />
 
       <View style={styles.orRow}>
@@ -140,16 +144,17 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  identity: { marginBottom: spacing.xl },
-  identityHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  identity: { marginBottom: spacing.g26 },
+  identityHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.g12 },
   identityText: { flex: 1 },
   identityEyebrow: { marginBottom: 5 },
-  identityRule: { marginVertical: spacing.md },
+  identityName: { fontFamily: fontFamilies.serifMedium, lineHeight: 22 },
+  identityRule: { marginVertical: spacing.g12 },
   identityPalette: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   identityStrip: { flex: 1, maxWidth: 150 },
-  header: { marginBottom: spacing.xl },
-  googleBtn: { marginTop: spacing.md },
-  orRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.xl },
+  header: { marginBottom: spacing.g26 },
+  googleBtn: { marginTop: spacing.g12 },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.g22 },
   flex: { flex: 1 },
   input: {
     height: 56,
@@ -158,10 +163,11 @@ const styles = StyleSheet.create({
     borderColor: colors.hairline,
     backgroundColor: colors.paper,
     paddingHorizontal: 22,
+    fontFamily: fontFamilies.sansRegular,
     fontSize: 16,
     color: colors.ink,
   },
   note: { marginTop: spacing.md, paddingHorizontal: spacing.sm },
-  footer: { gap: spacing.sm },
-  maybeLater: { alignSelf: 'center', paddingVertical: spacing.xs },
+  footer: { gap: spacing.g12 },
+  maybeLater: { alignSelf: 'center', paddingVertical: spacing.sm },
 });
