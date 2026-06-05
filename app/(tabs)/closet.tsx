@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, colors, GarmentSlot, radii, spacing, Text, Wordmark, type SlotTone } from '@/components';
@@ -10,7 +10,8 @@ import { useTranslation } from '@/i18n';
 import { pieceCategory, type ClosetCategory } from '@/lib/closet';
 import { usePieces, useSignedImageUrls } from '@/lib/hooks';
 
-const TONES: SlotTone[] = ['a', 'c', 'b', 'a', 'b', 'c'];
+// Placeholder tone cycle, mirrors the gallery's closet grid (a, c, b repeating).
+const TONES: SlotTone[] = ['a', 'c', 'b'];
 type Filter = 'all' | ClosetCategory;
 
 export default function ClosetScreen() {
@@ -19,6 +20,11 @@ export default function ClosetScreen() {
   const { data: pieces, isLoading } = usePieces();
   const { data: imageUrls } = useSignedImageUrls((pieces ?? []).map((p) => p.image_url));
   const [filter, setFilter] = useState<Filter>('all');
+  const { width } = useWindowDimensions();
+  // Two equal columns with one gutter-sized gap between them, mirroring the gallery's
+  // `grid-template-columns: 1fr 1fr; gap: 14`. Every slot is the same width, so a lone
+  // trailing item never stretches to full width.
+  const cellW = (width - spacing.gutter * 2 - spacing.md) / 2;
 
   const filters: { id: Filter; label: string }[] = [
     { id: 'all', label: c.filterAll },
@@ -68,7 +74,7 @@ export default function ClosetScreen() {
         <Text variant="title">{c.title}</Text>
         <Pressable style={styles.addBtn} onPress={() => router.push('/closet-add')}>
           <Icon name="plus" size={16} color={colors.gold} />
-          <Text variant="labelSm">{c.add}</Text>
+          <Text variant="label">{c.add}</Text>
         </Pressable>
       </View>
 
@@ -87,10 +93,10 @@ export default function ClosetScreen() {
         {shown.map((piece, i) => {
           const uri = piece.image_url ? imageUrls?.[piece.image_url] : undefined;
           return (
-            <Pressable key={piece.id} style={styles.cell} onPress={() => router.push(`/piece/${piece.id}`)}>
+            <Pressable key={piece.id} style={{ width: cellW }} onPress={() => router.push(`/piece/${piece.id}`)}>
               <GarmentSlot
                 tone={TONES[i % TONES.length]}
-                radius={radii.md}
+                radius={radii.slotSm}
                 source={uri ? { uri } : undefined}
               />
               <Text variant="label" style={styles.cellTitle} numberOfLines={1}>
@@ -118,11 +124,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xs,
   },
   addBtn: {
     flexDirection: 'row',
@@ -143,7 +149,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     gap: spacing.md,
   },
-  cell: { width: '47%', flexGrow: 1 },
   cellTitle: { marginTop: spacing.sm },
   cellSub: { marginTop: 2 },
   emptyWrap: { flex: 1, justifyContent: 'center' },

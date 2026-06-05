@@ -53,6 +53,7 @@ export const radii = {
   lg: 18,
   card: 24,
   slot: 20,
+  slotSm: 16,
   sheet: 30,
   pill: 999,
   chip: 999,
