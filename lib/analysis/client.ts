@@ -1,5 +1,14 @@
 import { supabase } from '../data';
-import type { AnalysisInput, AnalysisResult, GarmentTag, GarmentTagInput } from './types';
+import type {
+  AnalysisInput,
+  AnalysisResult,
+  DetectGarmentsInput,
+  DetectGarmentsResult,
+  GarmentImageRequest,
+  GarmentImageResult,
+  GarmentTag,
+  GarmentTagInput,
+} from './types';
 
 /**
  * Thin app-side wrappers for the analysis edge functions. No keys here; the
@@ -26,5 +35,32 @@ export async function tagGarment(input: GarmentTagInput): Promise<GarmentTag> {
   });
   if (error) throw error;
   if (!data) throw new Error('tag-piece returned no data');
+  return data;
+}
+
+/**
+ * Detect every distinct garment in a photo. The caller shows them as selectable
+ * cards and crops each pick via `produceGarmentImage`. Shared by the library/camera
+ * add flow and onboarding item extraction.
+ */
+export async function detectGarments(input: DetectGarmentsInput): Promise<DetectGarmentsResult> {
+  const { data, error } = await supabase.functions.invoke<DetectGarmentsResult>('detect-garments', {
+    body: input,
+  });
+  if (error) throw error;
+  if (!data) throw new Error('detect-garments returned no data');
+  return data;
+}
+
+/**
+ * Produce a per-garment slot image from a photo + region (the swappable
+ * GarmentImageProvider; today a focused crop). Returns base64 ready to upload.
+ */
+export async function produceGarmentImage(request: GarmentImageRequest): Promise<GarmentImageResult> {
+  const { data, error } = await supabase.functions.invoke<GarmentImageResult>('crop-garment', {
+    body: request,
+  });
+  if (error) throw error;
+  if (!data) throw new Error('crop-garment returned no data');
   return data;
 }

@@ -38,12 +38,82 @@ export interface ColorPalette {
   avoid: string[];
 }
 
+/**
+ * A garment's box within the source photo, in NORMALIZED coordinates (0..1),
+ * origin top-left. Used to crop a focused per-garment image out of the photo.
+ */
+export interface GarmentRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** A garment detected in a photo, auto-tagged to seed the closet. */
 export interface ExtractedItem {
   type: string;
   color?: string;
   pattern?: string;
   attributes?: { fit?: string; silhouette?: string; formality?: string };
+  /** Where the item sits in the source photo, so it can be cropped into a slot image. */
+  bounding_region?: GarmentRegion;
+}
+
+/**
+ * One garment found by `detectGarments`, ready for the user to pick + add. Same
+ * tag shape as ExtractedItem plus a short Hebrew label and its region in the photo.
+ */
+export interface DetectedGarment {
+  /** Short Hebrew label for the pick card, e.g. "ג'ינס כחול". */
+  label: string;
+  type: string;
+  color?: string;
+  pattern?: string;
+  attributes?: { fit?: string; silhouette?: string; formality?: string };
+  bounding_region?: GarmentRegion;
+}
+
+export interface DetectGarmentsInput {
+  photo: PhotoInput;
+  context?: { gender?: Gender };
+}
+
+export interface DetectGarmentsResult {
+  garments: DetectedGarment[];
+}
+
+/** The source photo a garment image is cut/cropped from. */
+export interface GarmentImageSource {
+  base64?: string;
+  url?: string;
+  /** e.g. 'image/jpeg'. */
+  mediaType?: string;
+}
+
+export interface GarmentImageRequest {
+  source: GarmentImageSource;
+  /** Where the garment sits in the source. Omit to use the whole image. */
+  region?: GarmentRegion;
+}
+
+/** The produced per-garment slot image, ready to upload to Storage. */
+export interface GarmentImageResult {
+  base64: string;
+  mediaType: string;
+}
+
+/**
+ * The swappable garment-image step: turns a photo + region into the slot image.
+ *
+ * The MVP implementation is a focused CROP to the region (no background removal).
+ * A real segmentation / cutout engine can replace it later by implementing this
+ * same interface, with ZERO changes to callers. See
+ * `supabase/functions/_shared/garment-image-crop.ts` for the crop provider.
+ */
+export interface GarmentImageProvider {
+  /** Stable id for logging/telemetry, e.g. 'crop' (later: 'cutout'). */
+  readonly id: string;
+  produce(request: GarmentImageRequest): Promise<GarmentImageResult>;
 }
 
 /**
@@ -117,7 +187,14 @@ export interface AnalysisProvider {
   /**
    * Tag a SINGLE garment photo (flat-lay or one worn item) into the Piece tag
    * shape. This is the lightweight counterpart to `analyze` (which expects a
-   * full-body PERSON photo); it powers the library / camera "add piece" flow.
+   * full-body PERSON photo); it powers a one-photo-one-garment add.
    */
   tagGarment(input: GarmentTagInput): Promise<GarmentTag>;
+  /**
+   * Detect EVERY distinct garment in a photo (a full-body shot or any photo), each
+   * tagged and with a bounding region. The user then picks which to add; each pick
+   * is cropped (via a GarmentImageProvider) into its own slot image. Shared by the
+   * library/camera add flow and onboarding item extraction.
+   */
+  detectGarments(input: DetectGarmentsInput): Promise<DetectGarmentsResult>;
 }

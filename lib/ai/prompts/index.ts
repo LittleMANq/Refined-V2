@@ -25,7 +25,8 @@ const ANALYSIS_JSON_CONTRACT = `Return ONE JSON object and nothing else (no mark
   "color_palette": { "flatters": ["שם צבע"], "avoid": ["שם צבע"] },
   "extracted_items": [
     { "type": "string", "color": "string", "pattern": "string",
-      "attributes": { "fit": "string", "silhouette": "string", "formality": "string" } }
+      "attributes": { "fit": "string", "silhouette": "string", "formality": "string" },
+      "bounding_region": { "x": 0.0, "y": 0.0, "width": 0.0, "height": 0.0 } }
   ],
   "styleIdentity": { "name": "string (2-3 words)", "description": "string (one warm sentence)" },
   "bodyInsight": "string (ONE sharp, practical, affirming sentence. Not a list.)",
@@ -34,7 +35,7 @@ const ANALYSIS_JSON_CONTRACT = `Return ONE JSON object and nothing else (no mark
   ],
   "nextItem": { "item": "string", "why": "string (why it is worth buying for them)" }
 }
-Rules: exactly 3 looks. EVERY value is in Hebrew, including skin_tone and contrast (never English words like "warm" or "low"). Every Hebrew value must follow the voice rules above. color_palette is warm muted neutrals that suit their coloring (no green, no purple).`;
+Rules: exactly 3 looks. EVERY value is in Hebrew, including skin_tone and contrast (never English words like "warm" or "low"). Every Hebrew value must follow the voice rules above. color_palette is warm muted neutrals that suit their coloring (no green, no purple). bounding_region is each extracted garment's box in NORMALIZED coordinates 0..1 (x,y = top-left corner; width,height = size), relative to the whole photo, so it can be cropped out.`;
 
 /** Vision analysis prompt: the personal-analysis magic moment. */
 export function buildAnalysisPrompt(context: AnalysisContext): { system: string; instruction: string } {
@@ -72,6 +73,40 @@ const GARMENT_TAG_JSON_CONTRACT = `Return ONE JSON object and nothing else (no m
   "attributes": { "fit": "string (Hebrew)", "silhouette": "string (Hebrew)", "formality": "string (Hebrew)" }
 }
 Rules: EVERY value is in Hebrew (never English words). "type" and "color" are required and must never be empty. Keep each value short, one or two words. Follow the voice rules above. No em dash.`;
+
+const DETECT_GARMENTS_JSON_CONTRACT = `Return ONE JSON object and nothing else (no markdown, no backticks). Shape:
+{
+  "garments": [
+    {
+      "label": "string (Hebrew, short, e.g. ג'ינס כחול / חולצה לבנה)",
+      "type": "string (Hebrew garment category, e.g. ג'ינס / חולצה / שמלה / נעליים)",
+      "color": "string (Hebrew dominant color)",
+      "pattern": "string (Hebrew; חלק if solid)",
+      "attributes": { "fit": "string", "silhouette": "string", "formality": "string" },
+      "bounding_region": { "x": 0.0, "y": 0.0, "width": 0.0, "height": 0.0 }
+    }
+  ]
+}
+Rules: detect each DISTINCT wearable garment in the photo (top, bottom, dress, outerwear, shoes, bag). Do NOT return the body, skin, hair, or background as items. EVERY user-facing value is in Hebrew (never English). bounding_region is the garment's box in NORMALIZED coordinates 0..1 (x,y = top-left corner; width,height = size), relative to the whole photo. Follow the voice rules above. No em dash. If the photo has no clear garment, return "garments": [].`;
+
+/** Multi-garment detection prompt: one photo in, a list of garments (with regions) out. */
+export function buildDetectGarmentsPrompt(gender: Gender): { system: string; instruction: string } {
+  const system = [
+    'אתה סטייליסט אישי יוקרתי. אתה מזהה את כל פריטי הלבוש המובחנים בתוך תמונה (גם תמונת גוף מלא) ומתייג כל אחד בנפרד.',
+    '',
+    voiceRules(gender),
+    '',
+    DETECT_GARMENTS_JSON_CONTRACT,
+  ].join('\n');
+
+  const instruction = [
+    'Look at the attached photo. List every distinct wearable garment you can see.',
+    'For each garment give its Hebrew label, type, dominant color, pattern, fit / silhouette / formality, and its bounding_region as normalized 0..1 coordinates over the whole photo.',
+    'Ignore the person, skin, hair and background. Output Hebrew values only.',
+  ].join('\n');
+
+  return { system, instruction };
+}
 
 /** Single-garment tagging prompt: one item photo in, Piece tags out. */
 export function buildGarmentTagPrompt(gender: Gender): { system: string; instruction: string } {

@@ -1,4 +1,10 @@
-import type { AnalysisResult, GarmentTag } from '../analysis/types.ts';
+import type {
+  AnalysisResult,
+  DetectedGarment,
+  DetectGarmentsResult,
+  GarmentRegion,
+  GarmentTag,
+} from '../analysis/types.ts';
 
 /**
  * Output guards. The model is instructed to return clean JSON / Hebrew text, but
@@ -40,6 +46,24 @@ function strArray(value: unknown): string[] {
   return value.filter((v): v is string => typeof v === 'string').map((v) => sanitizeNoEmDash(v.trim()));
 }
 
+function num01(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return Math.min(1, Math.max(0, value));
+}
+
+/** Parse a normalized 0..1 bounding region; undefined if absent or degenerate. */
+function parseRegion(value: unknown): GarmentRegion | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const r = value as Record<string, unknown>;
+  const x = num01(r.x);
+  const y = num01(r.y);
+  const width = num01(r.width);
+  const height = num01(r.height);
+  if (x === undefined || y === undefined || width === undefined || height === undefined) return undefined;
+  if (width <= 0 || height <= 0) return undefined;
+  return { x, y, width, height };
+}
+
 /** Validate + normalize the analysis JSON into a typed AnalysisResult. */
 export function parseAnalysisResult(raw: unknown): AnalysisResult {
   if (typeof raw !== 'object' || raw === null) {
@@ -72,6 +96,7 @@ export function parseAnalysisResult(raw: unknown): AnalysisResult {
         silhouette: optStr(attrs.silhouette),
         formality: optStr(attrs.formality),
       },
+      bounding_region: parseRegion(io.bounding_region),
     };
   });
 
@@ -122,6 +147,43 @@ export function parseGarmentTag(raw: unknown): GarmentTag {
       formality: optStr(attrs.formality),
     },
   };
+}
+
+/**
+ * Validate + normalize the multi-garment detection JSON. Resilient: a malformed
+ * entry is skipped (not fatal), so one bad item never sinks the whole detection.
+ * An empty list is valid (the caller falls back to a manual add).
+ */
+export function parseDetectedGarments(raw: unknown): DetectGarmentsResult {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new Error('Invalid detection output: not an object');
+  }
+  const r = raw as Record<string, unknown>;
+  const list = Array.isArray(r.garments) ? r.garments : [];
+  const garments: DetectedGarment[] = [];
+  for (const g of list) {
+    const go = (g ?? {}) as Record<string, unknown>;
+    let type: string;
+    try {
+      type = str(go.type, 'garments[].type');
+    } catch {
+      continue; // skip an entry with no usable type
+    }
+    const attrs = (go.attributes ?? {}) as Record<string, unknown>;
+    garments.push({
+      label: optStr(go.label) ?? type,
+      type,
+      color: optStr(go.color),
+      pattern: optStr(go.pattern),
+      attributes: {
+        fit: optStr(attrs.fit),
+        silhouette: optStr(attrs.silhouette),
+        formality: optStr(attrs.formality),
+      },
+      bounding_region: parseRegion(go.bounding_region),
+    });
+  }
+  return { garments };
 }
 
 /** The outfit reasoning is the core thesis and must never be empty. */

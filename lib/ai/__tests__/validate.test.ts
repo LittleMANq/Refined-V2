@@ -1,6 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { ensureReasoning, parseAnalysisResult, parseGarmentTag, sanitizeNoEmDash } from '../validate';
+import {
+  ensureReasoning,
+  parseAnalysisResult,
+  parseDetectedGarments,
+  parseGarmentTag,
+  sanitizeNoEmDash,
+} from '../validate';
 
 describe('voice + contract guards', () => {
   it('strips the banned em dash (and en dash) to a comma', () => {
@@ -63,5 +69,44 @@ describe('voice + contract guards', () => {
   it('garment tag throws only when the type itself is missing', () => {
     expect(() => parseGarmentTag({ color: 'שחור' })).toThrow();
     expect(() => parseGarmentTag(null)).toThrow();
+  });
+
+  it('parses multi-garment detection with regions, keeping order and skipping typeless entries', () => {
+    const res = parseDetectedGarments({
+      garments: [
+        {
+          label: "ג'ינס כחול",
+          type: "ג'ינס",
+          color: 'כחול',
+          pattern: 'חלק',
+          attributes: { formality: "קז'ואל" },
+          bounding_region: { x: 0.1, y: 0.5, width: 0.4, height: 0.4 },
+        },
+        { type: 'חולצה', color: 'לבן' }, // no region: kept, region undefined
+        { color: 'שחור' }, // no type: skipped, never sinks the whole detection
+      ],
+    });
+    expect(res.garments).toHaveLength(2);
+    expect(res.garments[0].type).toBe("ג'ינס");
+    expect(res.garments[0].bounding_region).toEqual({ x: 0.1, y: 0.5, width: 0.4, height: 0.4 });
+    expect(res.garments[1].label).toBe('חולצה'); // label falls back to type
+    expect(res.garments[1].bounding_region).toBeUndefined();
+  });
+
+  it('detection clamps out-of-range regions and drops degenerate ones', () => {
+    const res = parseDetectedGarments({
+      garments: [
+        { type: 'מעיל', bounding_region: { x: -0.2, y: 1.4, width: 0.5, height: 0.5 } },
+        { type: 'נעליים', bounding_region: { x: 0.1, y: 0.1, width: 0, height: 0.2 } },
+      ],
+    });
+    expect(res.garments[0].bounding_region).toEqual({ x: 0, y: 1, width: 0.5, height: 0.5 });
+    expect(res.garments[1].bounding_region).toBeUndefined(); // width 0 → dropped
+  });
+
+  it('detection returns an empty list (the graceful no-detection fallback) without throwing', () => {
+    expect(parseDetectedGarments({ garments: [] }).garments).toEqual([]);
+    expect(parseDetectedGarments({}).garments).toEqual([]);
+    expect(() => parseDetectedGarments(null)).toThrow();
   });
 });

@@ -1,3 +1,4 @@
+import { produceGarmentImage } from '../analysis';
 import type { AnalysisResult, ExtractedItem } from '../analysis/types';
 import {
   insertOutfit,
@@ -146,18 +147,40 @@ export async function persistOnboarding(data: OnboardingData): Promise<PersistRe
     preference_profile: buildPreferenceProfile(data),
   });
 
-  // Starter closet from the kept extracted items.
-  const firstPhoto = sourcePhotos[0] ?? null;
+  // Starter closet from the kept extracted items. Each is cropped to a focused
+  // per-garment image via the SAME shared GarmentImageProvider the closet-add flow
+  // uses, so onboarding pieces also get a real cropped image (not a full-body shot,
+  // not none). Cropping is best-effort: a failure never blocks the piece.
+  const firstPhotoPath = sourcePhotos[0] ?? null;
+  const cropSource = data.photos[0];
   let pieceCount = 0;
-  for (const item of data.keptItems) {
+  for (let i = 0; i < data.keptItems.length; i++) {
+    const item = data.keptItems[i];
+    let imagePath: string | null = null;
+    if (cropSource?.base64 && item.bounding_region) {
+      try {
+        const crop = await produceGarmentImage({
+          source: { base64: cropSource.base64, mediaType: cropSource.mediaType },
+          region: item.bounding_region,
+        });
+        const path = `${userId}/pieces/onboarding-${i}.jpg`;
+        const { error } = await supabase.storage
+          .from('photos')
+          .upload(path, base64ToBytes(crop.base64), { contentType: crop.mediaType, upsert: true });
+        if (!error) imagePath = path;
+      } catch {
+        // non-fatal: keep the piece without a cropped image
+      }
+    }
     const piece: PieceInsert = {
       user_id: userId,
+      image_url: imagePath,
       type: item.type,
       color: item.color ?? null,
       pattern: item.pattern ?? null,
       attributes: item.attributes ?? null,
       source: 'photo_analysis',
-      extracted_from_photo_id: firstPhoto,
+      extracted_from_photo_id: firstPhotoPath,
     };
     await insertPiece(piece);
     pieceCount++;

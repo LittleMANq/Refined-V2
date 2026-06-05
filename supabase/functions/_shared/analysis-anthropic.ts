@@ -4,12 +4,23 @@ import type {
   AnalysisInput,
   AnalysisProvider,
   AnalysisResult,
+  DetectGarmentsInput,
+  DetectGarmentsResult,
   GarmentTag,
   GarmentTagInput,
   PhotoInput,
 } from '../../../lib/analysis/types.ts';
-import { buildAnalysisPrompt, buildGarmentTagPrompt } from '../../../lib/ai/prompts/index.ts';
-import { extractJson, parseAnalysisResult, parseGarmentTag } from '../../../lib/ai/validate.ts';
+import {
+  buildAnalysisPrompt,
+  buildDetectGarmentsPrompt,
+  buildGarmentTagPrompt,
+} from '../../../lib/ai/prompts/index.ts';
+import {
+  extractJson,
+  parseAnalysisResult,
+  parseDetectedGarments,
+  parseGarmentTag,
+} from '../../../lib/ai/validate.ts';
 import { MODEL, textFromMessage } from './anthropic.ts';
 
 /**
@@ -69,5 +80,19 @@ export class AnthropicAnalysisProvider implements AnalysisProvider {
     });
 
     return parseGarmentTag(extractJson(textFromMessage(message)));
+  }
+
+  async detectGarments(input: DetectGarmentsInput): Promise<DetectGarmentsResult> {
+    const { system, instruction } = buildDetectGarmentsPrompt(input.context?.gender ?? 'unspecified');
+    const image = toImageBlock(input.photo);
+
+    const message = await this.client.messages.create({
+      model: MODEL,
+      max_tokens: 1500,
+      system,
+      messages: [{ role: 'user', content: [image, { type: 'text', text: instruction }] }],
+    });
+
+    return parseDetectedGarments(extractJson(textFromMessage(message)));
   }
 }

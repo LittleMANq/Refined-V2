@@ -5,21 +5,20 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, colors, Eyebrow, GarmentSlot, radii, spacing, Text } from '@/components';
+import { Card, colors, Eyebrow, GarmentSlot, PillButton, radii, spacing, Text, type SlotTone } from '@/components';
 import { InfoState, LookLoading } from '@/components/app';
 import { Icon, type IconName } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
-import { tagGarment } from '@/lib/analysis';
+import { detectGarments, produceGarmentImage, type DetectedGarment } from '@/lib/analysis';
 import { looksUnlocked } from '@/lib/closet';
-import { insertPiece, supabase, updatePiece, type Piece } from '@/lib/data';
+import { insertPiece, supabase, type Piece } from '@/lib/data';
 import { useCurrentUser, usePieces, useProfile, queryKeys } from '@/lib/hooks';
 import { base64ToBytes } from '@/lib/onboarding/base64';
 
-/** A piece moving through the post-add tagging phase (per-item working state). */
-type TagItem = { id: string; uri: string; working: boolean; ok: boolean; label: string | null };
-
-/** Up to this many library photos can be added in a single pass (frictionless ramp). */
-const MULTI_SELECT_LIMIT = 10;
+/** The picked photo we detect garments in (uri for preview, base64 to crop from). */
+type Source = { uri: string; base64?: string; mediaType: string };
+type Phase = 'choose' | 'detecting' | 'pick' | 'saving' | 'done';
+const TONES: SlotTone[] = ['a', 'c', 'b'];
 
 function MethodCard({
   icon,
@@ -60,6 +59,10 @@ function MethodCard({
   );
 }
 
+function garmentDetail(g: DetectedGarment): string {
+  return [g.color, g.pattern].filter(Boolean).join(' · ');
+}
+
 export default function ClosetAddScreen() {
   const { t } = useTranslation();
   const a = t.addPiece;
@@ -67,108 +70,138 @@ export default function ClosetAddScreen() {
   const { data: pieces } = usePieces();
   const { data: profile } = useProfile();
   const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
-  // The per-piece auto-tagging phase (so multi-add never looks frozen). Null when idle.
-  const [tagging, setTagging] = useState<TagItem[] | null>(null);
-  // The earned outcome of the last add: how many pieces went in and how many real
-  // new looks they unlocked (computed from the actual closet, never inflated).
-  const [result, setResult] = useState<{ added: number; looks: number } | null>(null);
 
-  const tagGender = profile?.gender ?? 'unspecified';
+  const [phase, setPhase] = useState<Phase>('choose');
+  const [detected, setDetected] = useState<{ source: Source; garments: DetectedGarment[] } | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  // The earned outcome of the last add (real new looks unlocked; never inflated).
+  // `needsDetails` marks the graceful fallback where nothing was detected.
+  const [result, setResult] = useState<{ added: number; looks: number; needsDetails: boolean } | null>(null);
 
-  const addFrom = async (source: 'camera' | 'gallery') => {
+  const gender = profile?.gender ?? 'unspecified';
+
+  /** Upload bytes to the user's private pieces folder. Returns the path, or null. */
+  const upload = async (b64: string, suffix: string): Promise<string | null> => {
+    const path = `${user!.id}/pieces/${Date.now()}-${suffix}.jpg`;
+    try {
+      const { error } = await supabase.storage
+        .from('photos')
+        .upload(path, base64ToBytes(b64), { contentType: 'image/jpeg', upsert: true });
+      return error ? null : path;
+    } catch {
+      return null;
+    }
+  };
+
+  /** Graceful fallback: no garment detected (or detection failed). Save the whole
+   *  photo as one untagged piece (a "needs details" item), never a dead end. */
+  const fallbackWholePhoto = async (source: Source) => {
+    setPhase('saving');
+    const before = pieces ?? [];
+    const imagePath = source.base64 ? await upload(source.base64, 'photo') : null;
+    const piece = await insertPiece({ user_id: user!.id, source: 'photo_library', image_url: imagePath });
+    qc.invalidateQueries({ queryKey: queryKeys.pieces });
+    const looks = looksUnlocked(before, [...before, piece]);
+    setResult({ added: 1, looks, needsDetails: true });
+    setPhase('done');
+  };
+
+  const addFrom = async (from: 'camera' | 'gallery') => {
     if (!user) return;
     const perm =
-      source === 'camera'
+      from === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
 
     const res =
-      source === 'camera'
+      from === 'camera'
         ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7, mediaTypes: ['images'] })
-        : await ImagePicker.launchImageLibraryAsync({
-            base64: true,
-            quality: 0.7,
-            mediaTypes: ['images'],
-            allowsMultipleSelection: true,
-            selectionLimit: MULTI_SELECT_LIMIT,
-          });
+        : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7, mediaTypes: ['images'] });
     if (res.canceled || !res.assets.length) return;
 
-    const before = pieces ?? [];
+    const asset = res.assets[0];
+    const source: Source = { uri: asset.uri, base64: asset.base64 ?? undefined, mediaType: asset.mimeType ?? 'image/jpeg' };
 
-    // 1) Upload + insert each piece UNTAGGED first (fast). The piece exists in the
-    //    closet immediately, value-before-effort, and never depends on tagging.
-    setBusy(true);
-    const added: { piece: Piece; uri: string; base64?: string }[] = [];
+    // Detect the garments in the photo, then let the user pick which to add.
+    setPhase('detecting');
     try {
-      for (const asset of res.assets) {
-        let imagePath: string | null = null;
-        if (asset.base64) {
-          const path = `${user.id}/pieces/${Date.now()}-${added.length}.jpg`;
-          try {
-            const { error } = await supabase.storage
-              .from('photos')
-              .upload(path, base64ToBytes(asset.base64), {
-                contentType: asset.mimeType ?? 'image/jpeg',
-                upsert: true,
-              });
-            if (!error) imagePath = path;
-          } catch {
-            // non-fatal: keep the piece without a stored image
-          }
-        }
-        const piece = await insertPiece({ user_id: user.id, source: 'photo_library', image_url: imagePath });
-        added.push({ piece, uri: asset.uri, base64: asset.base64 ?? undefined });
+      const { garments } = await detectGarments({
+        photo: { base64: source.base64, mediaType: source.mediaType },
+        context: { gender },
+      });
+      if (garments.length) {
+        setDetected({ source, garments });
+        setSelected(new Set(garments.map((_, i) => i))); // default: all selected
+        setPhase('pick');
+      } else {
+        await fallbackWholePhoto(source);
       }
-      qc.invalidateQueries({ queryKey: queryKeys.pieces });
-    } finally {
-      setBusy(false);
+    } catch {
+      await fallbackWholePhoto(source); // detection failure is non-fatal
     }
-
-    // 2) Auto-tag each piece (server-side vision), with a per-item working state.
-    //    A tag failure is non-fatal: the piece stays saved as a "needs details" item.
-    setTagging(added.map(({ piece, uri }) => ({ id: piece.id, uri, working: true, ok: false, label: null })));
-    const settle = (id: string, patch: Partial<TagItem>) =>
-      setTagging((prev) => prev && prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-
-    const finalPieces = await Promise.all(
-      added.map(async ({ piece, base64 }) => {
-        if (!base64) {
-          settle(piece.id, { working: false, ok: false, label: a.tagFailedShort });
-          return piece;
-        }
-        try {
-          const tag = await tagGarment({ photo: { base64, mediaType: 'image/jpeg' }, context: { gender: tagGender } });
-          const updated = await updatePiece(piece.id, {
-            type: tag.type,
-            subtype: tag.subtype ?? null,
-            color: tag.color ?? null,
-            pattern: tag.pattern ?? null,
-            attributes: tag.attributes ?? null,
-          });
-          settle(piece.id, {
-            working: false,
-            ok: true,
-            label: [updated.type, updated.color].filter(Boolean).join(' '),
-          });
-          return updated;
-        } catch {
-          settle(piece.id, { working: false, ok: false, label: a.tagFailedShort });
-          return piece; // graceful: stays untagged → "needs details"
-        }
-      }),
-    );
-
-    qc.invalidateQueries({ queryKey: queryKeys.pieces });
-    // The real unlock, computed from the post-tag pieces (honest, never inflated).
-    const looks = looksUnlocked(before, [...before, ...finalPieces]);
-    setTagging(null);
-    setResult({ added: finalPieces.length, looks });
   };
 
-  // Build the celebratory, honest unlock line from the real counts.
+  const toggle = (i: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+
+  /** Crop + persist each picked garment as its own tagged Piece. */
+  const confirmAdd = async () => {
+    if (!user || !detected) return;
+    const picks = detected.garments.filter((_, i) => selected.has(i));
+    if (!picks.length) return;
+
+    const { source } = detected;
+    const before = pieces ?? [];
+    setPhase('saving');
+
+    const created: Piece[] = [];
+    for (let i = 0; i < picks.length; i++) {
+      const g = picks[i];
+      // Crop a focused per-garment image from the photo (swappable provider).
+      let imagePath: string | null = null;
+      if (source.base64) {
+        try {
+          const crop = await produceGarmentImage({
+            source: { base64: source.base64, mediaType: source.mediaType },
+            region: g.bounding_region,
+          });
+          imagePath = await upload(crop.base64, `g${i}`);
+        } catch {
+          // non-fatal: persist the tagged piece without a cropped image
+        }
+      }
+      const piece = await insertPiece({
+        user_id: user.id,
+        source: 'photo_library',
+        image_url: imagePath,
+        type: g.type,
+        color: g.color ?? null,
+        pattern: g.pattern ?? null,
+        attributes: g.attributes ?? null,
+      });
+      created.push(piece);
+    }
+
+    qc.invalidateQueries({ queryKey: queryKeys.pieces });
+    const looks = looksUnlocked(before, [...before, ...created]);
+    setDetected(null);
+    setResult({ added: created.length, looks, needsDetails: false });
+    setPhase('done');
+  };
+
+  const restart = () => {
+    setResult(null);
+    setDetected(null);
+    setPhase('choose');
+  };
+
+  // The celebratory, honest unlock line from the real counts.
   let unlockTitle = a.unlockNoneTitle;
   let unlockBody = a.unlockNoneBody;
   if (result && result.looks > 0) {
@@ -182,51 +215,76 @@ export default function ClosetAddScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['bottom']}>
       <View style={styles.handle} />
-      {result ? (
+      {phase === 'done' && result ? (
         <View style={styles.body}>
           <InfoState
-            icon={result.looks > 0 ? 'star' : 'check'}
+            icon={result.needsDetails ? 'plus' : result.looks > 0 ? 'star' : 'check'}
             eyebrow={a.unlockEyebrow}
-            title={unlockTitle}
-            body={unlockBody}
+            title={result.needsDetails ? a.detectNoneTitle : unlockTitle}
+            body={result.needsDetails ? a.detectNoneBody : unlockBody}
             ctaLabel={a.unlockCta}
             onCta={() => router.back()}
           />
-          <Pressable onPress={() => setResult(null)} hitSlop={8} style={styles.addMore}>
+          <Pressable onPress={restart} hitSlop={8} style={styles.addMore}>
             <Icon name="plus" size={16} color={colors.gold} />
             <Text variant="label" color={colors.gold}>
               {a.addMore}
             </Text>
           </Pressable>
         </View>
-      ) : tagging ? (
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-          <Eyebrow style={styles.eyebrow}>{a.unlockEyebrow}</Eyebrow>
-          <Text variant="head" style={styles.title}>
-            {a.tagging}
-          </Text>
-          <View style={styles.tagGrid}>
-            {tagging.map((it) => (
-              <View key={it.id} style={styles.tagCell}>
-                <GarmentSlot
-                  tone="a"
-                  radius={radii.md}
-                  source={{ uri: it.uri }}
-                  loading={it.working}
-                />
-                <Text
-                  variant="labelSm"
-                  color={it.ok ? colors.ink : colors.gold}
-                  numberOfLines={1}
-                  style={styles.tagSub}
-                >
-                  {it.label ?? ' '}
-                </Text>
-              </View>
-            ))}
+      ) : phase === 'pick' && detected ? (
+        <View style={styles.pickWrap}>
+          <ScrollView contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
+            <Eyebrow style={styles.eyebrow}>{a.pickEyebrow}</Eyebrow>
+            <Text variant="head" style={styles.title}>
+              {a.pickTitle}
+            </Text>
+            <Text variant="subtitle" style={styles.subtitle}>
+              {a.pickSubtitle}
+            </Text>
+
+            <View style={styles.list}>
+              {detected.garments.map((g, i) => {
+                const on = selected.has(i);
+                const detail = garmentDetail(g);
+                return (
+                  <Card key={i} padding={spacing.md} style={[styles.pickCard, !on && styles.pickOff]}>
+                    <GarmentSlot tone={TONES[i % TONES.length]} width={64} radius={radii.sm} />
+                    <View style={styles.pickBody}>
+                      <Text variant="label" numberOfLines={1}>
+                        {g.type}
+                      </Text>
+                      {detail ? (
+                        <Text variant="labelSm" color={colors.secondary} numberOfLines={1} style={styles.pickDetail}>
+                          {detail}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => toggle(i)}
+                      style={[styles.toggle, on ? styles.toggleOn : styles.toggleOff]}
+                    >
+                      <Icon name={on ? 'check' : 'plus'} size={18} color={on ? colors.paper : colors.secondary} />
+                    </Pressable>
+                  </Card>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          <View style={styles.pickFooter}>
+            <PillButton label={a.addSelected} onPress={confirmAdd} disabled={selected.size === 0} />
+            <Pressable onPress={restart} hitSlop={8} style={styles.cancel}>
+              <Text variant="label" color={colors.secondary}>
+                {a.cancel}
+              </Text>
+            </Pressable>
           </View>
-        </ScrollView>
-      ) : busy ? (
+        </View>
+      ) : phase === 'detecting' ? (
+        <LookLoading message={a.detecting} />
+      ) : phase === 'saving' ? (
         <LookLoading message={a.saving} />
       ) : (
         <View style={styles.body}>
@@ -273,9 +331,18 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: spacing.xs, marginBottom: spacing.xl },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   cell: { width: '47%', flexGrow: 1 },
-  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
-  tagCell: { width: '30%', flexGrow: 1 },
-  tagSub: { marginTop: spacing.xs },
+  // pick (detected garments) screen
+  pickWrap: { flex: 1 },
+  pickScroll: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.lg },
+  list: { gap: spacing.md },
+  pickCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  pickOff: { opacity: 0.45 },
+  pickBody: { flex: 1 },
+  pickDetail: { marginTop: 2 },
+  toggle: { width: 40, height: 40, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  toggleOn: { backgroundColor: colors.gold },
+  toggleOff: { borderWidth: 1.5, borderColor: colors.hairline },
+  pickFooter: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md },
   method: {},
   methodCard: { minHeight: 118 },
   methodLocked: { opacity: 0.55 },
