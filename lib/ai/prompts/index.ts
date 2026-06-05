@@ -80,14 +80,15 @@ const DETECT_GARMENTS_JSON_CONTRACT = `Return ONE JSON object and nothing else (
     {
       "label": "string (Hebrew, short, e.g. ג'ינס כחול / חולצה לבנה)",
       "type": "string (Hebrew garment category, e.g. ג'ינס / חולצה / שמלה / נעליים)",
-      "color": "string (Hebrew dominant color)",
+      "color": "string (Hebrew, the SINGLE dominant color of the garment fabric, e.g. שחור / לבן / כחול / כחול כהה / ירוק כהה / חום / בז' / בורדו)",
       "pattern": "string (Hebrew; חלק if solid)",
       "attributes": { "fit": "string", "silhouette": "string", "formality": "string" },
       "bounding_region": { "x": 0.0, "y": 0.0, "width": 0.0, "height": 0.0 }
     }
   ]
 }
-Rules: detect each DISTINCT wearable garment in the photo (top, bottom, dress, outerwear, shoes, bag). Do NOT return the body, skin, hair, or background as items. EVERY user-facing value is in Hebrew (never English). bounding_region is the garment's box in NORMALIZED coordinates 0..1 (x,y = top-left corner; width,height = size), relative to the whole photo. Follow the voice rules above. No em dash. If the photo has no clear garment, return "garments": [].`;
+Rules: detect each DISTINCT wearable garment in the photo (top, bottom, dress, outerwear, shoes, bag). Do NOT return the body, skin, hair, or background as items. EVERY user-facing value is in Hebrew (never English). bounding_region is the garment's box in NORMALIZED coordinates 0..1 (x,y = top-left corner; width,height = size), relative to the whole photo. Follow the voice rules above. No em dash. If the photo has no clear garment, return "garments": [].
+COLOR ACCURACY (important): report each garment's TRUE dominant color as it appears on the fabric itself, ignoring lighting, shadow, screen tint and the background. Look carefully before naming it. Use exactly ONE real color name. If the shade sits between two colors, pick the single closest real color, never invent a hyphenated blend (for example do not write "כחול-אפור"). Name the actual hue: a dark green is "ירוק כהה" (not blue, not grey), a navy is "כחול כהה", an olive is "ירוק זית". Be accurate and conservative, if you are unsure prefer the plainest correct color name.`;
 
 /** Multi-garment detection prompt: one photo in, a list of garments (with regions) out. */
 export function buildDetectGarmentsPrompt(gender: Gender): { system: string; instruction: string } {
@@ -102,6 +103,7 @@ export function buildDetectGarmentsPrompt(gender: Gender): { system: string; ins
   const instruction = [
     'Look at the attached photo. List every distinct wearable garment you can see.',
     'For each garment give its Hebrew label, type, dominant color, pattern, fit / silhouette / formality, and its bounding_region as normalized 0..1 coordinates over the whole photo.',
+    'Read each color carefully and conservatively: the real dominant color of the fabric itself, one single real color name, never a hyphenated blend. A dark green is ירוק כהה, not blue or grey.',
     'Ignore the person, skin, hair and background. Output Hebrew values only.',
   ].join('\n');
 

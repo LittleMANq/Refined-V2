@@ -1,4 +1,5 @@
 import * as jpeg from 'npm:jpeg-js@0.4.4';
+import UPNG from 'npm:upng-js@2.1.0';
 import { decodeBase64, encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts';
 
 import type {
@@ -14,19 +15,50 @@ import type {
  * background removal yet, that is a FUTURE upgrade (a segmentation / cutout
  * provider implements this same interface and swaps in with zero caller changes).
  *
- * Pure geometry, no API key: decode the source JPEG to RGBA, copy the normalized
- * region's pixels into a smaller buffer, re-encode JPEG. Pure-JS (jpeg-js, no WASM,
- * no native), so it runs server-side and the app needs no native image lib.
+ * Pure geometry, no API key: decode the source to RGBA, copy the normalized
+ * region's pixels into a smaller buffer, re-encode JPEG. Accepts PNG and JPEG (the
+ * web picker yields PNG, the camera yields JPEG); output is always JPEG so the slot
+ * renders one consistent format. Pure-JS (jpeg-js + upng-js, no WASM, no native),
+ * so it runs server-side and the app needs no native image lib.
  */
 
+/** Strip a `data:<type>;base64,` prefix if the caller sent a data URL. */
+function stripDataUrl(base64: string): string {
+  const marker = 'base64,';
+  const i = base64.indexOf(marker);
+  return i >= 0 ? base64.slice(i + marker.length) : base64;
+}
+
 async function sourceBytes(source: GarmentImageSource): Promise<Uint8Array> {
-  if (source.base64) return decodeBase64(source.base64);
+  if (source.base64) return decodeBase64(stripDataUrl(source.base64));
   if (source.url) {
     const res = await fetch(source.url);
     if (!res.ok) throw new Error(`Failed to fetch source image: ${res.status}`);
     return new Uint8Array(await res.arrayBuffer());
   }
   throw new Error('source must include base64 or url');
+}
+
+type RawImage = { width: number; height: number; data: Uint8Array };
+
+const isPng = (b: Uint8Array): boolean =>
+  b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
+const isJpeg = (b: Uint8Array): boolean =>
+  b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+
+/** Decode PNG or JPEG bytes to packed RGBA (4 bytes/pixel). Throws on anything else. */
+function decodeToRgba(bytes: Uint8Array): RawImage {
+  if (isPng(bytes)) {
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    const png = UPNG.decode(ab);
+    const frame = UPNG.toRGBA8(png)[0]; // ArrayBuffer of RGBA for the first frame
+    return { width: png.width, height: png.height, data: new Uint8Array(frame) };
+  }
+  if (isJpeg(bytes)) {
+    const d = jpeg.decode(bytes, { useTArray: true });
+    return { width: d.width, height: d.height, data: d.data };
+  }
+  throw new Error('Unsupported image format (expected PNG or JPEG)');
 }
 
 /** Convert a normalized region to a valid pixel box inside the WxH image. */
@@ -56,10 +88,7 @@ export class CropGarmentImageProvider implements GarmentImageProvider {
 
   async produce(request: GarmentImageRequest): Promise<GarmentImageResult> {
     const bytes = await sourceBytes(request.source);
-    const decoded = jpeg.decode(bytes, { useTArray: true }); // RGBA, 4 bytes/pixel
-    const W = decoded.width;
-    const H = decoded.height;
-    const src = decoded.data;
+    const { width: W, height: H, data: src } = decodeToRgba(bytes); // RGBA, 4 bytes/pixel
 
     const { px, py, pw, ph } = pixelBox(request.region, W, H);
 
