@@ -36,7 +36,9 @@ export default function RootLayout() {
       <I18nProvider>
         <SafeAreaProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="closet-add" options={{ presentation: 'modal' }} />
+          </Stack>
         </SafeAreaProvider>
       </I18nProvider>
     </QueryClientProvider>
