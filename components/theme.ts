@@ -7,7 +7,7 @@
 export const colors = {
   // palette — the only colors in the system
   ink: '#1B1714',
-  paper: '#F8F7F4',
+  paper: '#FAF7F2',
   surface: '#F1ECE4',
   hairline: '#E2DBD0',
   secondary: '#8A8178',
@@ -66,24 +66,24 @@ export const radii = {
 export const shadows = {
   card: {
     shadowColor: '#1B1714',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 8,
   },
   float: {
     shadowColor: '#1B1714',
-    shadowOffset: { width: 0, height: 22 },
-    shadowOpacity: 0.22,
-    shadowRadius: 34,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.28,
+    shadowRadius: 30,
+    elevation: 16,
   },
   pill: {
     shadowColor: '#1B1714',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.38,
+    shadowRadius: 18,
+    elevation: 10,
   },
 } as const;
 

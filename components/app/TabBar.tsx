@@ -20,12 +20,14 @@ type TabBarProps = {
   };
 };
 
+// The gallery's bespoke tab glyphs (sun / hanger / chat / heart); the extra create
+// tab takes the sparkle (the generate-a-look mark).
 const ICONS: Record<string, IconName> = {
   today: 'sun',
-  closet: 'grid',
-  create: 'plus-square',
-  stylist: 'message-circle',
-  you: 'user',
+  closet: 'hanger',
+  create: 'sparkle',
+  stylist: 'chat',
+  you: 'heart',
 };
 
 /**

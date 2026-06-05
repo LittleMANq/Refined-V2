@@ -8,6 +8,7 @@ import {
   type ImageSourcePropType,
   type ViewStyle,
 } from 'react-native';
+import Svg, { Defs, Line, Pattern, Rect } from 'react-native-svg';
 
 import { fontFamilies } from './fonts';
 import { Text } from './Text';
@@ -40,14 +41,42 @@ const HIGHLIGHT: Record<'light' | 'ink', readonly [string, string]> = {
   ink: ['rgba(176,137,83,0.28)', 'rgba(176,137,83,0)'],
 };
 const SHADE: Record<'light' | 'ink', readonly [string, string]> = {
-  light: ['rgba(27,23,20,0)', 'rgba(27,23,20,0.12)'],
-  ink: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.32)'],
+  // The inset bottom shade (deeper than before) that grounds the slot, matching the
+  // gallery's `inset 0 -34px 50px -34px` shadow.
+  light: ['rgba(27,23,20,0)', 'rgba(27,23,20,0.18)'],
+  ink: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.42)'],
 };
+// The fine diagonal "thread" weave that gives the toned placeholder its tactile,
+// fabric-like texture (gallery: repeating-linear-gradient(-45deg, …gold 0.05…)).
+const THREAD: Record<'light' | 'ink', string> = {
+  light: 'rgba(176,137,83,0.06)',
+  ink: 'rgba(176,137,83,0.16)',
+};
+// The 1px top-edge highlight (gallery: `inset 0 1px 0 rgba(255,255,255,0.45)`).
+const TOP_EDGE: Record<'light' | 'ink', string> = {
+  light: 'rgba(255,255,255,0.45)',
+  ink: 'rgba(255,255,255,0.10)',
+};
+
+/** The diagonal thread weave, tiled across the slot. */
+function Weave({ color }: { color: string }) {
+  return (
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
+      <Defs>
+        <Pattern id="weave" patternUnits="userSpaceOnUse" width={12} height={12} patternTransform="rotate(-45)">
+          <Line x1={0} y1={0} x2={0} y2={12} stroke={color} strokeWidth={1} />
+        </Pattern>
+      </Defs>
+      <Rect x={0} y={0} width="100%" height="100%" fill="url(#weave)" />
+    </Svg>
+  );
+}
 
 /**
  * The warm 3:4 portrait placeholder. The toned fill is intentional, reserved for
- * real photography. Never square. Built from layered gradients (soft top-left
- * highlight + bottom shade) over the tone color.
+ * real photography. Never square. Built from a diagonal thread weave, a soft
+ * top-left sheen, an inset bottom shade, and a 1px top highlight, over the tone
+ * color, so the largest surface in the app reads as dimensional fabric, not a flat box.
  */
 export function GarmentSlot({
   tone = 'a',
@@ -66,12 +95,7 @@ export function GarmentSlot({
     <View
       style={[
         styles.slot,
-        {
-          width,
-          borderRadius: radius,
-          backgroundColor: slotTones[tone],
-          borderColor: isInk ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)',
-        },
+        { width, borderRadius: radius, backgroundColor: slotTones[tone] },
         style,
       ]}
     >
@@ -79,7 +103,7 @@ export function GarmentSlot({
         // Real photo: fill the slot (cover). The toned background shows while it loads.
         <Image source={source} resizeMode="cover" style={StyleSheet.absoluteFill} />
       ) : (
-        // Toned placeholder: layered highlight + shade over the tone color.
+        // Toned placeholder: top-left sheen + diagonal weave + inset bottom shade.
         <>
           <LinearGradient
             pointerEvents="none"
@@ -88,15 +112,20 @@ export function GarmentSlot({
             end={{ x: 0.75, y: 0.62 }}
             style={StyleSheet.absoluteFill}
           />
+          <Weave color={THREAD[key]} />
           <LinearGradient
             pointerEvents="none"
             colors={SHADE[key]}
-            start={{ x: 0, y: 0.5 }}
+            start={{ x: 0, y: 0.45 }}
             end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
         </>
       )}
+
+      {/* 1px top-edge highlight, always on, for the dimensional lit edge. */}
+      <View pointerEvents="none" style={[styles.topEdge, { backgroundColor: TOP_EDGE[key] }]} />
+
       {scrim ? (
         <LinearGradient
           pointerEvents="none"
@@ -132,7 +161,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+  },
+  topEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
   },
   labelWrap: {
     position: 'absolute',
