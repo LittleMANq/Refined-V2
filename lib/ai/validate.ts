@@ -1,4 +1,4 @@
-import type { AnalysisResult } from '../analysis/types.ts';
+import type { AnalysisResult, GarmentTag } from '../analysis/types.ts';
 
 /**
  * Output guards. The model is instructed to return clean JSON / Hebrew text, but
@@ -95,6 +95,31 @@ export function parseAnalysisResult(raw: unknown): AnalysisResult {
     nextItem: {
       item: str(next.item, 'nextItem.item'),
       why: str(next.why, 'nextItem.why'),
+    },
+  };
+}
+
+/**
+ * Validate + normalize the single-garment tag JSON into a typed GarmentTag.
+ * Lenient on purpose: `type` is required (a piece must read as something), but a
+ * missing color / pattern / attribute never throws, so a partly-tagged garment
+ * still saves gracefully instead of crashing the add.
+ */
+export function parseGarmentTag(raw: unknown): GarmentTag {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new Error('Invalid garment tag output: not an object');
+  }
+  const r = raw as Record<string, unknown>;
+  const attrs = (r.attributes ?? {}) as Record<string, unknown>;
+  return {
+    type: str(r.type, 'type'),
+    subtype: optStr(r.subtype),
+    color: optStr(r.color),
+    pattern: optStr(r.pattern),
+    attributes: {
+      fit: optStr(attrs.fit),
+      silhouette: optStr(attrs.silhouette),
+      formality: optStr(attrs.formality),
     },
   };
 }

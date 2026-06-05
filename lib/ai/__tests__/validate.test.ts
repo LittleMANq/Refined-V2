@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { ensureReasoning, parseAnalysisResult, sanitizeNoEmDash } from '../validate';
+import { ensureReasoning, parseAnalysisResult, parseGarmentTag, sanitizeNoEmDash } from '../validate';
 
 describe('voice + contract guards', () => {
   it('strips the banned em dash (and en dash) to a comma', () => {
@@ -39,5 +39,29 @@ describe('voice + contract guards', () => {
   it('throws a structured error when required fields are missing', () => {
     expect(() => parseAnalysisResult({ body_type: 'מאוזן' })).toThrow();
     expect(() => parseAnalysisResult(null)).toThrow();
+  });
+
+  it('parses a single-garment tag (the library/camera add) into the Piece tag shape', () => {
+    const tag = parseGarmentTag({
+      type: "ג'ינס",
+      subtype: 'סקיני',
+      color: 'כחול',
+      pattern: 'חלק',
+      attributes: { fit: 'צמוד', silhouette: 'ישר', formality: 'יומיומי' },
+    });
+    expect(tag.type).toBe("ג'ינס");
+    expect(tag.color).toBe('כחול');
+    expect(tag.attributes?.fit).toBe('צמוד');
+  });
+
+  it('garment tag is lenient (saves with just a type) but sanitizes em dashes', () => {
+    const tag = parseGarmentTag({ type: 'מעיל — ארוך' });
+    expect(tag.type).toBe('מעיל, ארוך'); // em dash sanitized
+    expect(tag.color).toBeUndefined(); // missing color never throws (graceful)
+  });
+
+  it('garment tag throws only when the type itself is missing', () => {
+    expect(() => parseGarmentTag({ color: 'שחור' })).toThrow();
+    expect(() => parseGarmentTag(null)).toThrow();
   });
 });

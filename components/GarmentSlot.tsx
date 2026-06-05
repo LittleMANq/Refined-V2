@@ -1,6 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+  type ViewStyle,
+} from 'react-native';
 
 import { fontFamilies } from './fonts';
 import { Text } from './Text';
@@ -8,6 +15,14 @@ import { colors, radii, slotTones, type SlotTone } from './theme';
 
 type Props = {
   tone?: SlotTone;
+  /**
+   * Real garment photo. When present it fills the slot (cover, 3:4) over the toned
+   * fill (which shows as the load placeholder). Omit for the intentional toned
+   * placeholder reserved for pieces without a photo.
+   */
+  source?: ImageSourcePropType;
+  /** Shows a calm working overlay (e.g. while the piece is being auto-tagged). */
+  loading?: boolean;
   /** Centered mono caption (e.g. "LOOK 01"). Reserved for real photography later. */
   label?: string;
   /** Fixed width; height follows the 3:4 ratio. Omit to fill the parent column. */
@@ -36,6 +51,8 @@ const SHADE: Record<'light' | 'ink', readonly [string, string]> = {
  */
 export function GarmentSlot({
   tone = 'a',
+  source,
+  loading,
   label,
   width,
   radius = radii.slot,
@@ -58,20 +75,28 @@ export function GarmentSlot({
         style,
       ]}
     >
-      <LinearGradient
-        pointerEvents="none"
-        colors={HIGHLIGHT[key]}
-        start={{ x: 0.22, y: 0.1 }}
-        end={{ x: 0.75, y: 0.62 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <LinearGradient
-        pointerEvents="none"
-        colors={SHADE[key]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {source ? (
+        // Real photo: fill the slot (cover). The toned background shows while it loads.
+        <Image source={source} resizeMode="cover" style={StyleSheet.absoluteFill} />
+      ) : (
+        // Toned placeholder: layered highlight + shade over the tone color.
+        <>
+          <LinearGradient
+            pointerEvents="none"
+            colors={HIGHLIGHT[key]}
+            start={{ x: 0.22, y: 0.1 }}
+            end={{ x: 0.75, y: 0.62 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <LinearGradient
+            pointerEvents="none"
+            colors={SHADE[key]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </>
+      )}
       {scrim ? (
         <LinearGradient
           pointerEvents="none"
@@ -89,6 +114,12 @@ export function GarmentSlot({
           <Text style={[styles.label, isInk && { color: '#D8CFC2' }]} align="center">
             {label}
           </Text>
+        </View>
+      ) : null}
+
+      {loading ? (
+        <View style={styles.loading} pointerEvents="none">
+          <ActivityIndicator color={colors.gold} />
         </View>
       ) : null}
     </View>
@@ -109,6 +140,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
+  },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.ink12,
   },
   label: {
     fontFamily: fontFamilies.mono,

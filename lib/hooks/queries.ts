@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { User } from '@supabase/supabase-js';
 
-import { getProfile, listPieces, supabase, type Piece, type Profile } from '../data';
+import { createSignedImageUrls, getProfile, listPieces, supabase, type Piece, type Profile } from '../data';
 
 /** Shared query keys, so screens and mutations invalidate consistently. */
 export const queryKeys = {
@@ -39,5 +39,20 @@ export function usePieces() {
     queryKey: queryKeys.pieces,
     enabled: !!user,
     queryFn: () => listPieces(user!.id),
+  });
+}
+
+/**
+ * Batch-resolve signed URLs for private piece-image paths. Pass the pieces'
+ * `image_url` values (nulls allowed); get back a { path -> signed URL } map.
+ * One request for the whole grid. Refreshed before the signed URLs expire.
+ */
+export function useSignedImageUrls(paths: (string | null | undefined)[]) {
+  const clean = Array.from(new Set(paths.filter((p): p is string => !!p))).sort();
+  return useQuery<Record<string, string>>({
+    queryKey: ['signed-images', clean.join('|')],
+    enabled: clean.length > 0,
+    staleTime: 50 * 60 * 1000, // under the 1h URL TTL, so links never go stale on screen
+    queryFn: () => createSignedImageUrls(clean),
   });
 }

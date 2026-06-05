@@ -1,4 +1,4 @@
-import type { AnalysisContext } from '../../analysis/types.ts';
+import type { AnalysisContext, Gender } from '../../analysis/types.ts';
 import type {
   ChatMessage,
   ClosetPiece,
@@ -58,6 +58,36 @@ export function buildAnalysisPrompt(context: AnalysisContext): { system: string;
     'Then synthesise: a named Style Identity, one sharp affirming body insight (a single practical sentence), three first looks (each a title and a short why), and one next item worth buying (with the why).',
     'Base the color palette on their natural coloring. Explain every recommendation. Output Hebrew values only.',
     ...contextLines,
+  ].join('\n');
+
+  return { system, instruction };
+}
+
+const GARMENT_TAG_JSON_CONTRACT = `Return ONE JSON object and nothing else (no markdown, no backticks). Shape:
+{
+  "type": "string (Hebrew, the garment category, e.g. ג'ינס / חולצה / שמלה / נעליים / מעיל)",
+  "subtype": "string (Hebrew, optional finer label, e.g. סקיני / מכופתרת / מידי; empty string if unsure)",
+  "color": "string (Hebrew color name, the dominant color, e.g. כחול / שחור / חול / קוניאק)",
+  "pattern": "string (Hebrew, e.g. חלק / פסים / משבצות / פרחוני; use חלק if it is solid)",
+  "attributes": { "fit": "string (Hebrew)", "silhouette": "string (Hebrew)", "formality": "string (Hebrew)" }
+}
+Rules: EVERY value is in Hebrew (never English words). "type" and "color" are required and must never be empty. Keep each value short, one or two words. Follow the voice rules above. No em dash.`;
+
+/** Single-garment tagging prompt: one item photo in, Piece tags out. */
+export function buildGarmentTagPrompt(gender: Gender): { system: string; instruction: string } {
+  const system = [
+    'אתה סטייליסט אישי יוקרתי. אתה מזהה פריט לבוש בודד מתוך תמונה (פריט שטוח או פריט לבוש יחיד) ומתייג אותו במדויק.',
+    '',
+    voiceRules(gender),
+    '',
+    GARMENT_TAG_JSON_CONTRACT,
+  ].join('\n');
+
+  const instruction = [
+    'Look at the attached photo of ONE garment (a flat-lay, or a single worn item).',
+    'Identify the single main garment and tag it: its type, an optional finer subtype, its dominant color, its pattern, and fit / silhouette / formality.',
+    'If more than one item is visible, tag only the most prominent garment.',
+    'Output Hebrew values only.',
   ].join('\n');
 
   return { system, instruction };

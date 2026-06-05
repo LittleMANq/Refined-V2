@@ -2,17 +2,21 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, colors, Eyebrow, radii, spacing, Text } from '@/components';
+import { Card, colors, Eyebrow, GarmentSlot, radii, spacing, Text } from '@/components';
 import { InfoState, LookLoading } from '@/components/app';
 import { Icon, type IconName } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
+import { tagGarment } from '@/lib/analysis';
 import { looksUnlocked } from '@/lib/closet';
-import { insertPiece, supabase, type Piece } from '@/lib/data';
-import { useCurrentUser, usePieces, queryKeys } from '@/lib/hooks';
+import { insertPiece, supabase, updatePiece, type Piece } from '@/lib/data';
+import { useCurrentUser, usePieces, useProfile, queryKeys } from '@/lib/hooks';
 import { base64ToBytes } from '@/lib/onboarding/base64';
+
+/** A piece moving through the post-add tagging phase (per-item working state). */
+type TagItem = { id: string; uri: string; working: boolean; ok: boolean; label: string | null };
 
 /** Up to this many library photos can be added in a single pass (frictionless ramp). */
 const MULTI_SELECT_LIMIT = 10;
@@ -61,11 +65,16 @@ export default function ClosetAddScreen() {
   const a = t.addPiece;
   const { data: user } = useCurrentUser();
   const { data: pieces } = usePieces();
+  const { data: profile } = useProfile();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  // The per-piece auto-tagging phase (so multi-add never looks frozen). Null when idle.
+  const [tagging, setTagging] = useState<TagItem[] | null>(null);
   // The earned outcome of the last add: how many pieces went in and how many real
   // new looks they unlocked (computed from the actual closet, never inflated).
   const [result, setResult] = useState<{ added: number; looks: number } | null>(null);
+
+  const tagGender = profile?.gender ?? 'unspecified';
 
   const addFrom = async (source: 'camera' | 'gallery') => {
     if (!user) return;
@@ -87,14 +96,17 @@ export default function ClosetAddScreen() {
           });
     if (res.canceled || !res.assets.length) return;
 
+    const before = pieces ?? [];
+
+    // 1) Upload + insert each piece UNTAGGED first (fast). The piece exists in the
+    //    closet immediately, value-before-effort, and never depends on tagging.
     setBusy(true);
+    const added: { piece: Piece; uri: string; base64?: string }[] = [];
     try {
-      const before = pieces ?? [];
-      const inserted: Piece[] = [];
       for (const asset of res.assets) {
         let imagePath: string | null = null;
         if (asset.base64) {
-          const path = `${user.id}/pieces/${Date.now()}-${inserted.length}.jpg`;
+          const path = `${user.id}/pieces/${Date.now()}-${added.length}.jpg`;
           try {
             const { error } = await supabase.storage
               .from('photos')
@@ -108,15 +120,52 @@ export default function ClosetAddScreen() {
           }
         }
         const piece = await insertPiece({ user_id: user.id, source: 'photo_library', image_url: imagePath });
-        inserted.push(piece);
+        added.push({ piece, uri: asset.uri, base64: asset.base64 ?? undefined });
       }
       qc.invalidateQueries({ queryKey: queryKeys.pieces });
-      // The real unlock: looks the closet can build now, minus what it could before.
-      const looks = looksUnlocked(before, [...before, ...inserted]);
-      setResult({ added: inserted.length, looks });
     } finally {
       setBusy(false);
     }
+
+    // 2) Auto-tag each piece (server-side vision), with a per-item working state.
+    //    A tag failure is non-fatal: the piece stays saved as a "needs details" item.
+    setTagging(added.map(({ piece, uri }) => ({ id: piece.id, uri, working: true, ok: false, label: null })));
+    const settle = (id: string, patch: Partial<TagItem>) =>
+      setTagging((prev) => prev && prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+
+    const finalPieces = await Promise.all(
+      added.map(async ({ piece, base64 }) => {
+        if (!base64) {
+          settle(piece.id, { working: false, ok: false, label: a.tagFailedShort });
+          return piece;
+        }
+        try {
+          const tag = await tagGarment({ photo: { base64, mediaType: 'image/jpeg' }, context: { gender: tagGender } });
+          const updated = await updatePiece(piece.id, {
+            type: tag.type,
+            subtype: tag.subtype ?? null,
+            color: tag.color ?? null,
+            pattern: tag.pattern ?? null,
+            attributes: tag.attributes ?? null,
+          });
+          settle(piece.id, {
+            working: false,
+            ok: true,
+            label: [updated.type, updated.color].filter(Boolean).join(' '),
+          });
+          return updated;
+        } catch {
+          settle(piece.id, { working: false, ok: false, label: a.tagFailedShort });
+          return piece; // graceful: stays untagged → "needs details"
+        }
+      }),
+    );
+
+    qc.invalidateQueries({ queryKey: queryKeys.pieces });
+    // The real unlock, computed from the post-tag pieces (honest, never inflated).
+    const looks = looksUnlocked(before, [...before, ...finalPieces]);
+    setTagging(null);
+    setResult({ added: finalPieces.length, looks });
   };
 
   // Build the celebratory, honest unlock line from the real counts.
@@ -150,6 +199,33 @@ export default function ClosetAddScreen() {
             </Text>
           </Pressable>
         </View>
+      ) : tagging ? (
+        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+          <Eyebrow style={styles.eyebrow}>{a.unlockEyebrow}</Eyebrow>
+          <Text variant="head" style={styles.title}>
+            {a.tagging}
+          </Text>
+          <View style={styles.tagGrid}>
+            {tagging.map((it) => (
+              <View key={it.id} style={styles.tagCell}>
+                <GarmentSlot
+                  tone="a"
+                  radius={radii.md}
+                  source={{ uri: it.uri }}
+                  loading={it.working}
+                />
+                <Text
+                  variant="labelSm"
+                  color={it.ok ? colors.ink : colors.gold}
+                  numberOfLines={1}
+                  style={styles.tagSub}
+                >
+                  {it.label ?? ' '}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       ) : busy ? (
         <LookLoading message={a.saving} />
       ) : (
@@ -197,6 +273,9 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: spacing.xs, marginBottom: spacing.xl },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   cell: { width: '47%', flexGrow: 1 },
+  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
+  tagCell: { width: '30%', flexGrow: 1 },
+  tagSub: { marginTop: spacing.xs },
   method: {},
   methodCard: { minHeight: 118 },
   methodLocked: { opacity: 0.55 },

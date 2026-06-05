@@ -103,6 +103,7 @@ export function he(gender: Gender) {
         'הוסף כמה פריטים, ונתחיל להרכיב לך לוקים אמיתיים שמתאימים בדיוק לך.',
       ),
       emptyCta: g('הוסיפי את הפריטים הראשונים', 'הוסף את הפריטים הראשונים'),
+      needsDetails: g('הוסיפי פרטים', 'הוסף פרטים'),
     },
     addPiece: {
       eyebrow: 'הוספה לארון',
@@ -119,6 +120,8 @@ export function he(gender: Gender) {
       soon: 'בקרוב',
       cancel: 'ביטול',
       saving: 'מוסיפים לארון…',
+      tagging: 'מזהים את הפריטים…',
+      tagFailedShort: 'צריך פרטים',
       unlockEyebrow: 'נוסף לארון',
       unlockOnePiece: 'הפריט הזה פתח',
       unlockManyPieces: 'הפריטים האלה פתחו',
@@ -189,6 +192,12 @@ export function he(gender: Gender) {
       buildLook: g('בני לוק עם הפריט', 'בנה לוק עם הפריט'),
       unnamed: 'פריט',
       subtitle: 'אחד מפריטי הסטייל שלך.',
+      needsDetailsTitle: 'הפריט הזה צריך עוד פרטים',
+      needsDetailsBody: g(
+        'לא הצלחנו לזהות אותו לבד. הוסיפי סוג וצבע ואשלב אותו בלוקים.',
+        'לא הצלחנו לזהות אותו לבד. הוסף סוג וצבע ואשלב אותו בלוקים.',
+      ),
+      needsDetailsCta: g('הוסיפי פרטים', 'הוסף פרטים'),
     },
     onboarding: {
       intro: {

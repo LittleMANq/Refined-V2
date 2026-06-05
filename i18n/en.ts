@@ -98,6 +98,7 @@ export function en(gender: Gender) {
         'Add a few pieces and we will start building real looks made exactly for you.',
       ),
       emptyCta: g('Add your first pieces', 'Add your first pieces'),
+      needsDetails: g('Add details', 'Add details'),
     },
     addPiece: {
       eyebrow: 'Add to closet',
@@ -114,6 +115,8 @@ export function en(gender: Gender) {
       soon: 'Soon',
       cancel: 'Cancel',
       saving: 'Adding to your closet…',
+      tagging: 'Identifying your pieces…',
+      tagFailedShort: 'Needs details',
       unlockEyebrow: 'Added to closet',
       unlockOnePiece: 'This piece opened',
       unlockManyPieces: 'These pieces opened',
@@ -184,6 +187,12 @@ export function en(gender: Gender) {
       buildLook: g('Build a look with it', 'Build a look with it'),
       unnamed: 'Piece',
       subtitle: 'One of your style pieces.',
+      needsDetailsTitle: 'This piece needs a few details',
+      needsDetailsBody: g(
+        "We couldn't identify it on its own. Add a type and color and I will work it into looks.",
+        "We couldn't identify it on its own. Add a type and color and I will work it into looks.",
+      ),
+      needsDetailsCta: g('Add details', 'Add details'),
     },
     onboarding: {
       intro: {

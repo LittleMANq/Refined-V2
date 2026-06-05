@@ -46,6 +46,26 @@ export interface ExtractedItem {
   attributes?: { fit?: string; silhouette?: string; formality?: string };
 }
 
+/**
+ * Auto-tags for ONE garment, in the Piece tag shape (single-piece add from the
+ * library / camera). All user-facing values are Hebrew, identical in shape to an
+ * `ExtractedItem` so a tagged piece is indistinguishable from a photo-extracted one.
+ * `type` is always present; the rest are best-effort (a piece still saves without them).
+ */
+export interface GarmentTag {
+  type: string;
+  subtype?: string;
+  color?: string;
+  pattern?: string;
+  attributes?: { fit?: string; silhouette?: string; formality?: string };
+}
+
+/** One garment photo to tag (a flat-lay or a single worn item), for the add flow. */
+export interface GarmentTagInput {
+  photo: PhotoInput;
+  context?: { gender?: Gender };
+}
+
 export interface StyleIdentityRead {
   name: string;
   description: string;
@@ -94,4 +114,10 @@ export interface AnalysisProvider {
   /** Stable id for logging/telemetry, e.g. 'anthropic-vision'. */
   readonly id: string;
   analyze(input: AnalysisInput): Promise<AnalysisResult>;
+  /**
+   * Tag a SINGLE garment photo (flat-lay or one worn item) into the Piece tag
+   * shape. This is the lightweight counterpart to `analyze` (which expects a
+   * full-body PERSON photo); it powers the library / camera "add piece" flow.
+   */
+  tagGarment(input: GarmentTagInput): Promise<GarmentTag>;
 }

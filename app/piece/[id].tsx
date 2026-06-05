@@ -18,7 +18,7 @@ import {
 import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { deletePiece, getPiece, updatePiece, type PieceUpdate } from '@/lib/data';
-import { queryKeys } from '@/lib/hooks';
+import { queryKeys, useSignedImageUrls } from '@/lib/hooks';
 
 type Fields = {
   type: string;
@@ -48,6 +48,7 @@ export default function PieceDetailScreen() {
     queryKey: ['piece', id],
     queryFn: () => getPiece(id),
   });
+  const { data: imageMap } = useSignedImageUrls([piece?.image_url]);
 
   const startEdit = () => {
     if (!piece) return;
@@ -134,6 +135,9 @@ export default function PieceDetailScreen() {
     silhouette: piece.attributes?.silhouette,
   };
 
+  const heroUri = piece.image_url ? imageMap?.[piece.image_url] : undefined;
+  const needsDetails = !piece.type;
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Header
@@ -150,7 +154,12 @@ export default function PieceDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <GarmentSlot tone="a" radius={radii.card} style={styles.heroSlot} />
+          <GarmentSlot
+            tone="a"
+            radius={radii.card}
+            style={styles.heroSlot}
+            source={heroUri ? { uri: heroUri } : undefined}
+          />
         </View>
 
         <Text variant="head" style={styles.name}>
@@ -159,6 +168,18 @@ export default function PieceDetailScreen() {
         <Text variant="subtitle" style={styles.subtitle}>
           {p.subtitle}
         </Text>
+
+        {needsDetails && !editing ? (
+          <Card padding={spacing.md} style={styles.needs}>
+            <Text variant="label">{p.needsDetailsTitle}</Text>
+            <Text variant="labelSm" color={colors.secondary} style={styles.needsBody}>
+              {p.needsDetailsBody}
+            </Text>
+            <View style={styles.needsCta}>
+              <PillButton label={p.needsDetailsCta} onPress={startEdit} />
+            </View>
+          </Card>
+        ) : null}
 
         <Card padding={0} style={styles.attrs}>
           {rows.map((row, i) => (
@@ -236,6 +257,9 @@ const styles = StyleSheet.create({
   heroSlot: { width: '100%', aspectRatio: 3 / 4 },
   name: { marginTop: spacing.lg, fontSize: 27 },
   subtitle: { marginTop: spacing.xs },
+  needs: { marginTop: spacing.lg },
+  needsBody: { marginTop: spacing.xs },
+  needsCta: { marginTop: spacing.md },
   attrs: { marginTop: spacing.lg, overflow: 'hidden' },
   divider: { marginHorizontal: spacing.md },
   attrRow: {

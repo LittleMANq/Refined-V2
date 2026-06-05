@@ -8,7 +8,7 @@ import { InfoState } from '@/components/app';
 import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { pieceCategory, type ClosetCategory } from '@/lib/closet';
-import { usePieces } from '@/lib/hooks';
+import { usePieces, useSignedImageUrls } from '@/lib/hooks';
 
 const TONES: SlotTone[] = ['a', 'c', 'b', 'a', 'b', 'c'];
 type Filter = 'all' | ClosetCategory;
@@ -17,6 +17,7 @@ export default function ClosetScreen() {
   const { t } = useTranslation();
   const c = t.closet;
   const { data: pieces, isLoading } = usePieces();
+  const { data: imageUrls } = useSignedImageUrls((pieces ?? []).map((p) => p.image_url));
   const [filter, setFilter] = useState<Filter>('all');
 
   const filters: { id: Filter; label: string }[] = [
@@ -83,19 +84,30 @@ export default function ClosetScreen() {
       </ScrollView>
 
       <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-        {shown.map((piece, i) => (
-          <Pressable key={piece.id} style={styles.cell} onPress={() => router.push(`/piece/${piece.id}`)}>
-            <GarmentSlot tone={TONES[i % TONES.length]} radius={radii.md} />
-            <Text variant="label" style={styles.cellTitle} numberOfLines={1}>
-              {piece.type ?? t.piece.unnamed}
-            </Text>
-            {piece.color ? (
-              <Text variant="labelSm" color={colors.secondary} numberOfLines={1} style={styles.cellSub}>
-                {piece.color}
+        {shown.map((piece, i) => {
+          const uri = piece.image_url ? imageUrls?.[piece.image_url] : undefined;
+          return (
+            <Pressable key={piece.id} style={styles.cell} onPress={() => router.push(`/piece/${piece.id}`)}>
+              <GarmentSlot
+                tone={TONES[i % TONES.length]}
+                radius={radii.md}
+                source={uri ? { uri } : undefined}
+              />
+              <Text variant="label" style={styles.cellTitle} numberOfLines={1}>
+                {piece.type ?? t.piece.unnamed}
               </Text>
-            ) : null}
-          </Pressable>
-        ))}
+              {piece.color ? (
+                <Text variant="labelSm" color={colors.secondary} numberOfLines={1} style={styles.cellSub}>
+                  {piece.color}
+                </Text>
+              ) : !piece.type ? (
+                <Text variant="labelSm" color={colors.gold} numberOfLines={1} style={styles.cellSub}>
+                  {c.needsDetails}
+                </Text>
+              ) : null}
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
