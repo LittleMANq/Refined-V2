@@ -49,6 +49,15 @@ export const spacing = {
   xxl: 32,
   xxxl: 44,
   gutter: 24,
+  // Gallery-specific spacing values, finer than the core scale (named by value so
+  // they read as exact gallery measurements, never hardcoded at the call site).
+  g9: 9,
+  g11: 11,
+  g12: 12,
+  g16: 16,
+  g20: 20,
+  g22: 22,
+  g26: 26,
 } as const;
 
 export const radii = {

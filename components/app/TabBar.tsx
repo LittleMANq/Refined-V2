@@ -40,7 +40,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const labels = t.tabs;
 
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.g12) }]}>
       {state.routes.map((route, index) => {
         const focused = state.index === index;
         const icon = ICONS[route.name];
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
     backgroundColor: colors.paper,
     paddingTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.g12,
   },
   tab: {
     flex: 1,

@@ -11,6 +11,8 @@ type Props = {
   /** Show the color names beneath the strip. */
   showNames?: boolean;
   height?: number;
+  /** Strip corner radius (gallery: 14 on profile, 16 on the reveal). Defaults to radii.md. */
+  radius?: number;
   style?: ViewStyle;
 };
 
@@ -19,13 +21,13 @@ type Props = {
  * names render as a real swatch; an unknown name falls back to a surface block
  * showing the name, never a guessed color.
  */
-export function PaletteStrip({ palette, showNames, height = 60, style }: Props) {
+export function PaletteStrip({ palette, showNames, height = 60, radius, style }: Props) {
   const items = palette.slice(0, 6);
   if (items.length === 0) return null;
 
   return (
     <View style={style}>
-      <View style={styles.strip}>
+      <View style={[styles.strip, radius != null && { borderRadius: radius }]}>
         {items.map((name, i) => {
           const hex = paletteSwatch(name);
           return (

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Chip, colors, Hairline, shadows, spacing, Text } from '@/components';
+import { Chip, colors, fontFamilies, Hairline, shadows, spacing, Text } from '@/components';
 import { Icon } from '@/components/onboarding';
 import { useTranslation, type Gender } from '@/i18n';
 import { stylistChat, type ChatMessage } from '@/lib/ai';
@@ -177,12 +177,12 @@ export default function StylistScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.g11, paddingHorizontal: spacing.g22, paddingTop: spacing.lg, paddingBottom: spacing.md },
   headerText: { flex: 1 },
-  headerTitle: { fontSize: 16 },
+  headerTitle: { fontFamily: fontFamilies.sansSemibold, fontSize: 16 },
   onlineDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: colors.gold },
   avatar: { backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  messages: { padding: spacing.gutter, gap: spacing.md },
+  messages: { paddingHorizontal: spacing.g22, paddingTop: spacing.g20, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, maxWidth: '88%' },
   rowMe: { alignSelf: 'flex-end' },
   rowThem: { alignSelf: 'flex-start' },
@@ -191,11 +191,11 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: 250, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 18 },
   bubbleMe: { backgroundColor: colors.ink, borderBottomEndRadius: 6 },
   bubbleThem: { backgroundColor: colors.white, borderBottomStartRadius: 6, ...shadows.card },
-  bubbleText: { fontSize: 15, lineHeight: 22 },
+  bubbleText: { fontSize: 14.5, lineHeight: 21 },
   errorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.sm },
   chipsRow: { flexGrow: 0 },
-  chips: { paddingHorizontal: spacing.gutter, gap: spacing.sm, paddingBottom: spacing.sm },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm },
+  chips: { paddingHorizontal: spacing.g22, gap: spacing.g9, paddingBottom: spacing.g12 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.g22, paddingBottom: spacing.g16 },
   input: {
     flex: 1,
     height: 52,
@@ -207,6 +207,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.ink,
   },
-  send: { width: 52, height: 52, borderRadius: 999, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  send: { width: 52, height: 52, borderRadius: 999, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...shadows.pill },
   sendDisabled: { opacity: 0.4 },
 });

@@ -101,7 +101,7 @@ export default function TodayScreen() {
 
         <Reveal delay={stagger(2)} style={styles.quick}>
           <Pressable style={styles.flex} onPress={() => router.navigate('/closet')}>
-            <Card padding={spacing.lg}>
+            <Card padding={spacing.g16}>
               <Icon name="hanger" size={22} color={colors.gold} />
               <Text variant="label" style={styles.quickTitle}>
                 {t.today.closetCard}
@@ -112,7 +112,7 @@ export default function TodayScreen() {
             </Card>
           </Pressable>
           <Pressable style={styles.flex} onPress={() => router.navigate('/create')}>
-            <Card padding={spacing.lg}>
+            <Card padding={spacing.g16}>
               <Icon name="sparkle" size={22} color={colors.gold} />
               <Text variant="label" style={styles.quickTitle}>
                 {t.tabs.create}
@@ -131,16 +131,16 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   center: { flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.g26, paddingBottom: spacing.xxl },
   flex: { flex: 1 },
-  topbar: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: spacing.lg },
+  topbar: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: spacing.g22 },
   greeting: { marginBottom: 6 },
   palette: { marginBottom: spacing.xl },
   section: { marginBottom: spacing.xl },
-  eyebrow: { marginBottom: spacing.md },
+  eyebrow: { marginBottom: spacing.g12 },
   actions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
   actionBtn: { flex: 1 },
-  quick: { flexDirection: 'row', gap: spacing.md },
-  quickTitle: { marginTop: spacing.sm },
+  quick: { flexDirection: 'row', gap: spacing.g12 },
+  quickTitle: { marginTop: spacing.sm, fontSize: 15 },
   quickSub: { marginTop: 2 },
 });

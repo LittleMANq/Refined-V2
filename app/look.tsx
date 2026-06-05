@@ -46,7 +46,7 @@ export default function LookScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.headerBtn}>
           <Icon name="chevron-right" size={24} color={colors.ink} />
         </Pressable>
-        <Text variant="mono" color={colors.secondary}>
+        <Text variant="monoSm" color={colors.secondary}>
           {lk.header}
         </Text>
         <Pressable onPress={save} hitSlop={10} style={styles.headerBtn}>
@@ -117,13 +117,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.g22,
+    paddingTop: spacing.g12,
     paddingBottom: spacing.sm,
   },
   headerBtn: { padding: 4 },
-  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg },
-  footer: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md, paddingBottom: spacing.sm, gap: spacing.md },
-  row: { flexDirection: 'row', gap: spacing.md },
+  scroll: { paddingHorizontal: spacing.g22, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  footer: { paddingHorizontal: spacing.g22, paddingTop: spacing.md, paddingBottom: spacing.g20, gap: spacing.g11 },
+  row: { flexDirection: 'row', gap: spacing.g11 },
   rowBtn: { flex: 1 },
 });

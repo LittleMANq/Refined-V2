@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xs,
+    paddingTop: spacing.g26,
+    paddingBottom: 0,
   },
   addBtn: {
     flexDirection: 'row',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   filtersRow: { flexGrow: 0 },
-  filters: { paddingHorizontal: spacing.gutter, gap: spacing.sm, paddingVertical: spacing.sm },
+  filters: { paddingHorizontal: spacing.gutter, gap: spacing.g9, paddingVertical: spacing.g16 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

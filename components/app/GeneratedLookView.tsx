@@ -53,7 +53,9 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
             {!compact ? (
               <View style={styles.whyPill}>
                 <Icon name="sparkle" size={14} color={colors.gold} />
-                <Text variant="labelSm">{t.look.whyChip}</Text>
+                <Text variant="labelSm" style={styles.whyPillText}>
+                  {t.look.whyChip}
+                </Text>
               </View>
             ) : null}
             <View style={styles.heroOverlay}>
@@ -145,19 +147,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper92,
   },
   heroOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, paddingBottom: 18 },
+  whyPillText: { fontFamily: fontFamilies.sansSemibold, fontSize: 12 },
   occasion: { marginBottom: 7 },
   heroHeading: { fontFamily: fontFamilies.serifMedium, fontSize: 27, lineHeight: 30 },
   compactCard: { marginTop: spacing.md },
   whyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   compactReasoning: { lineHeight: 26 },
-  pieces: { marginTop: spacing.xl },
-  piecesLabel: { marginBottom: spacing.md },
-  pieceRail: { gap: spacing.sm, paddingBottom: 2 },
+  pieces: { marginTop: spacing.g22 },
+  piecesLabel: { marginBottom: spacing.g12 },
+  pieceRail: { gap: spacing.g11, paddingBottom: 2 },
   pieceItem: { width: 82 },
   pieceName: { marginTop: 7 },
   pieceSub: { marginTop: 1, fontSize: 8.5 },
-  reasoningCard: { marginTop: spacing.xl },
-  reasoningHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  reasoningCard: { marginTop: spacing.g22 },
+  reasoningHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.g9, marginBottom: spacing.md },
   reasoningIcon: {
     width: 30,
     height: 30,

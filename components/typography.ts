@@ -65,6 +65,14 @@ export const typeScale = {
     letterSpacing: 0.88,
     textTransform: 'uppercase',
   },
+  // The smaller mono the gallery uses for header kickers / captions (9.5px).
+  monoSm: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 9.5,
+    lineHeight: 12,
+    letterSpacing: 0.76,
+    textTransform: 'uppercase',
+  },
   eyebrow: {
     fontFamily: fontFamilies.monoMedium,
     fontSize: 11,

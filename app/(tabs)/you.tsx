@@ -5,6 +5,7 @@ import {
   Card,
   colors,
   Eyebrow,
+  fontFamilies,
   Hairline,
   radii,
   spacing,
@@ -33,7 +34,9 @@ function SettingRow({
           <Icon name={icon} size={18} color={colors.gold} />
         </View>
         <View style={styles.flex}>
-          <Text variant="label">{label}</Text>
+          <Text variant="label" style={styles.settingLabel}>
+            {label}
+          </Text>
           <Text variant="labelSm" color={colors.secondary} style={styles.settingSub}>
             {sub}
           </Text>
@@ -104,7 +107,7 @@ export default function YouScreen() {
                 </Text>
               ) : null}
             </View>
-            <PaletteStrip palette={palette} height={52} />
+            <PaletteStrip palette={palette} height={52} radius={radii.r14} />
           </View>
         ) : null}
 
@@ -162,7 +165,7 @@ export default function YouScreen() {
             <Icon name="sparkle" size={20} color={colors.gold} />
           </View>
           <View style={styles.flex}>
-            <Text variant="label" color={colors.paper}>
+            <Text variant="label" color={colors.paper} style={styles.plusTitle}>
               {y.plusTitle}
             </Text>
             <Text variant="labelSm" color={colors.paper} style={styles.plusSub}>
@@ -179,31 +182,33 @@ export default function YouScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   center: { flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { paddingHorizontal: spacing.g22, paddingTop: spacing.g26, paddingBottom: spacing.xxl },
   flex: { flex: 1 },
   heroRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   identityName: { fontSize: 40, lineHeight: 41 },
   eyebrow: { marginBottom: spacing.md },
-  description: { marginTop: spacing.md, marginBottom: spacing.xl },
-  section: { marginBottom: spacing.xl },
-  sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.md },
-  worldsLabel: { marginBottom: spacing.md },
-  worlds: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  description: { marginTop: spacing.g16, marginBottom: spacing.g26 },
+  section: { marginBottom: spacing.g26 },
+  sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.g12 },
+  worldsLabel: { marginBottom: spacing.g12 },
+  worlds: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g9 },
   // Matches the gallery's `chip chip--on`: ink fill AND a 1px ink border (same
   // footprint as every other chip in the app).
   worldChip: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ink, borderRadius: 999, paddingHorizontal: 18, height: 38, alignItems: 'center', justifyContent: 'center' },
   evolutionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   soon: { backgroundColor: colors.gold14, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
   soonText: { fontSize: 9.5 },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 7, height: 56, opacity: 0.6 },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 7, height: 56, opacity: 0.55 },
   bar: { flex: 1, borderRadius: 6 },
-  evolutionBody: { fontSize: 13.5, marginTop: spacing.md },
-  settingsCard: { overflow: 'hidden', marginBottom: spacing.xl },
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: 15 },
-  settingIcon: { width: 36, height: 36, borderRadius: radii.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  evolutionBody: { fontSize: 13.5, marginTop: spacing.md, lineHeight: 20 },
+  settingsCard: { overflow: 'hidden', marginBottom: spacing.g16 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.g16, paddingVertical: 15 },
+  settingIcon: { width: 36, height: 36, borderRadius: radii.r12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  settingLabel: { fontSize: 15 },
   settingSub: { marginTop: 2 },
-  settingDivider: { marginHorizontal: spacing.md },
-  plus: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.ink, borderRadius: radii.card, padding: spacing.md },
-  plusIcon: { width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.gold28, alignItems: 'center', justifyContent: 'center' },
+  settingDivider: { marginHorizontal: spacing.g16 },
+  plus: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.ink, borderRadius: radii.card, padding: spacing.g16 },
+  plusIcon: { width: 38, height: 38, borderRadius: radii.r12, backgroundColor: colors.gold22, alignItems: 'center', justifyContent: 'center' },
+  plusTitle: { fontFamily: fontFamilies.sansSemibold, fontSize: 15 },
   plusSub: { marginTop: 2, opacity: 0.7 },
 });

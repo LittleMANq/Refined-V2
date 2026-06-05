@@ -102,10 +102,10 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
-  header: { marginBottom: spacing.xl },
-  occasionLabel: { marginBottom: spacing.md },
-  occasions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
+  scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.g26, paddingBottom: spacing.xxl },
+  header: { marginBottom: spacing.g26 },
+  occasionLabel: { marginBottom: spacing.g12 },
+  occasions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g9, marginBottom: spacing.xl },
   result: { marginTop: spacing.sm },
   actions: { gap: spacing.sm, marginTop: spacing.lg },
 });
