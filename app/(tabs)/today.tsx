@@ -7,6 +7,7 @@ import { GeneratedLookView, InfoState, LookLoading } from '@/components/app';
 import { Icon, PaletteStrip } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
+import { DAILY_LOOK_MIN_PIECES } from '@/lib/closet';
 import { useDailyLook, usePieces, useProfile } from '@/lib/hooks';
 
 export default function TodayScreen() {
@@ -27,6 +28,14 @@ export default function TodayScreen() {
   const palette = profile.analysis?.color_palette?.flatters ?? [];
   const generating = daily.isFetching;
   const needMore = daily.error instanceof NeedMorePiecesError;
+
+  // How many more pieces unlock the daily look (specific + motivating, not a dead
+  // end). Real, derived from the closet size against the daily-look floor.
+  const needed = Math.max(DAILY_LOOK_MIN_PIECES - (pieces?.length ?? 0), 1);
+  const unlockBody =
+    needed === 1
+      ? t.today.unlockOne
+      : `${t.today.unlockManyPrefix} ${needed} ${t.today.unlockManySuffix}`;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -54,11 +63,12 @@ export default function TodayScreen() {
             <LookLoading message={t.ai.generating} />
           ) : needMore ? (
             <InfoState
-              icon="grid"
-              title={t.ai.needMoreTitle}
-              body={t.ai.needMoreBody}
-              ctaLabel={t.closet.add}
-              onCta={() => router.navigate('/closet')}
+              icon="plus"
+              eyebrow={t.today.unlockEyebrow}
+              title={t.today.unlockTitle}
+              body={unlockBody}
+              ctaLabel={t.today.unlockCta}
+              onCta={() => router.push('/closet-add')}
             />
           ) : daily.isError ? (
             <InfoState

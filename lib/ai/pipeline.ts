@@ -93,7 +93,6 @@ function buildCandidates(closet: ClosetPiece[], targetFormality: number): Candid
   const outer = by.outer[0];
   const wantOuter = targetFormality >= 3 && !!outer;
 
-  const candidates: Candidate[] = [];
   const finish = (base: ClosetPiece[]): Candidate => {
     const pieces = [...base];
     if (shoe) pieces.push(shoe);
@@ -101,14 +100,48 @@ function buildCandidates(closet: ClosetPiece[], targetFormality: number): Candid
     return { pieces };
   };
 
-  for (const dress of by.dress) candidates.push(finish([dress]));
+  // Tier 1 — complete looks: a dress on its own, or a top paired with a bottom.
+  // This is the preferred shape and the only tier a healthy closet ever needs.
+  const tier1: Candidate[] = [];
+  for (const dress of by.dress) tier1.push(finish([dress]));
   for (const top of by.top) {
     for (const bottom of by.bottom) {
-      candidates.push(finish([top, bottom]));
-      if (candidates.length >= 60) return candidates; // bound the search
+      tier1.push(finish([top, bottom]));
+      if (tier1.length >= 60) return tier1; // bound the search
     }
   }
-  return candidates;
+  if (tier1.length) return tier1;
+
+  // Tier 2 — simpler-but-valid looks for a thin or sparsely-tagged closet, so we
+  // deliver a real look from as few as ~4-5 pieces instead of dropping to the
+  // empty state (the cold-start cliff). An 'other' piece (a real garment the
+  // tagger did not recognize) is treated as a flexible body piece. A pair only
+  // forms an upper+lower look, never two tops or two bottoms.
+  const body = [...by.top, ...by.bottom, ...by.other];
+  const isTop = (p: ClosetPiece) => by.top.includes(p);
+  const isBottom = (p: ClosetPiece) => by.bottom.includes(p);
+  const tier2: Candidate[] = [];
+  for (let i = 0; i < body.length; i++) {
+    for (let j = i + 1; j < body.length; j++) {
+      const a = body[i];
+      const b = body[j];
+      if (isTop(a) && isTop(b)) continue;
+      if (isBottom(a) && isBottom(b)) continue;
+      tier2.push(finish([a, b]));
+      if (tier2.length >= 60) return tier2;
+    }
+  }
+  if (tier2.length) return tier2;
+
+  // Last resort — a single body piece is still a presentable look once it is
+  // finished with shoes and/or an outer layer (at least two garments together).
+  if (body.length && (shoe || outer)) {
+    const pieces = [body[0]];
+    if (shoe) pieces.push(shoe);
+    if (outer) pieces.push(outer);
+    return [{ pieces }];
+  }
+  return [];
 }
 
 function scoreColorPalette(pieces: ClosetPiece[], input: GenerateOutfitInput): number {

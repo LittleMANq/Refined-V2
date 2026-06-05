@@ -41,6 +41,31 @@ describe('selectOutfit (candidate -> score -> select)', () => {
     ).toBeNull();
   });
 
+  it('still builds a simpler look from a thin, sparsely-tagged closet (tier 2)', () => {
+    const selection = selectOutfit({
+      ...base,
+      closet: [
+        { id: 'x1', type: 'חולצה', color: 'חול' },
+        { id: 'x2', type: null, color: 'טאופ' }, // untagged -> flexible body piece
+        { id: 'sh1', type: 'נעליים', color: 'קוניאק' },
+      ],
+    });
+    expect(selection).not.toBeNull();
+    expect(selection!.piece_ids).toContain('x1');
+    expect(selection!.piece_ids).toContain('x2');
+  });
+
+  it('builds a look from two untagged pieces rather than giving up', () => {
+    const selection = selectOutfit({
+      ...base,
+      closet: [
+        { id: 'u1', type: null, color: 'חול' },
+        { id: 'u2', type: null, color: 'טאופ' },
+      ],
+    });
+    expect(selection).not.toBeNull();
+  });
+
   it('treats a dress as a complete look on its own', () => {
     const selection = selectOutfit({
       ...base,

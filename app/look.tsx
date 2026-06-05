@@ -8,6 +8,7 @@ import { GeneratedLookView, InfoState, LookLoading } from '@/components/app';
 import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
+import { DAILY_LOOK_MIN_PIECES } from '@/lib/closet';
 import { persistGeneratedOutfit, useCurrentUser, useDailyLook, usePieces, useProfile } from '@/lib/hooks';
 
 export default function LookScreen() {
@@ -21,6 +22,11 @@ export default function LookScreen() {
   const [wore, setWore] = useState(false);
 
   const needMore = daily.error instanceof NeedMorePiecesError;
+  const needed = Math.max(DAILY_LOOK_MIN_PIECES - (pieces?.length ?? 0), 1);
+  const unlockBody =
+    needed === 1
+      ? t.today.unlockOne
+      : `${t.today.unlockManyPrefix} ${needed} ${t.today.unlockManySuffix}`;
 
   const save = async () => {
     if (!user || !daily.data || saved) return;
@@ -53,10 +59,11 @@ export default function LookScreen() {
           <LookLoading message={t.ai.generating} />
         ) : needMore ? (
           <InfoState
-            icon="grid"
-            title={t.ai.needMoreTitle}
-            body={t.ai.needMoreBody}
-            ctaLabel={t.closet.add}
+            icon="plus"
+            eyebrow={t.today.unlockEyebrow}
+            title={t.today.unlockTitle}
+            body={unlockBody}
+            ctaLabel={t.today.unlockCta}
             onCta={() => router.push('/closet-add')}
           />
         ) : daily.isError ? (
