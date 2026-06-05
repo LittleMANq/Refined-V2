@@ -6,20 +6,25 @@ import type {
   GarmentImageResult,
   GarmentImageSource,
   GarmentImageTags,
-  GarmentRegion,
 } from '../../../lib/analysis/types.ts';
+import { CropGarmentImageProvider } from './garment-image-crop.ts';
 
 /**
  * The active GarmentImageProvider: generates a clean, catalog-style product image
  * of the detected garment with Google's Gemini image model ("Nano Banana").
  *
- * The garment photo + its detected tags (type/color) go in; a single garment on a
- * seamless neutral background, framed 3:4, comes back. The Gemini key lives ONLY in
- * the edge secret GEMINI_API_KEY, never on the client. A timeout guards against a
- * slow generation hanging the add; on any failure the caller stays graceful.
+ * Fidelity first: the source photo is CROPPED to the detected bounding_region so
+ * exactly ONE garment is sent to Gemini (no guessing which item), and the prompt is
+ * reproduction-first (reproduce the pictured garment faithfully; the tags are a
+ * hint only, the image is the source of truth). A single garment on a seamless
+ * neutral background, framed 3:4, comes back.
+ *
+ * The Gemini key lives ONLY in the edge secret GEMINI_API_KEY, never on the client.
+ * A timeout guards against a slow generation hanging the add; on any failure the
+ * caller stays graceful ("needs details").
  *
  * Swappable: a different image engine just implements GarmentImageProvider, no
- * caller changes (the crop provider in garment-image-crop.ts is kept as a fallback).
+ * caller changes.
  */
 
 const MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-2.5-flash-image';
@@ -39,26 +44,25 @@ function stripDataUrl(base64: string): string {
   return i >= 0 ? base64.slice(i + marker.length) : base64;
 }
 
-/** A light positional hint so the right garment is chosen when several are present. */
-function positionHint(region?: GarmentRegion): string {
-  if (!region) return '';
-  const cx = region.x + region.width / 2;
-  const cy = region.y + region.height / 2;
-  const vert = cy < 0.34 ? 'upper' : cy > 0.66 ? 'lower' : 'middle';
-  const horiz = cx < 0.34 ? 'left' : cx > 0.66 ? 'right' : 'center';
-  return ` (it appears in the ${vert} ${horiz} area of the photo)`;
-}
-
-function buildPrompt(tags?: GarmentImageTags, region?: GarmentRegion): string {
-  const desc = [tags?.color, tags?.type].filter(Boolean).join(' ').trim() || tags?.label || 'single garment';
+/**
+ * Reproduction-first prompt: the cropped image is the source of truth, the model
+ * must reproduce the pictured garment faithfully, never substitute or invent. The
+ * tag is only a soft hint and the image wins on any conflict.
+ */
+function buildPrompt(tags?: GarmentImageTags): string {
+  const hint = [tags?.color, tags?.type].filter(Boolean).join(' ').trim() || tags?.label || '';
   return [
-    `Create a clean, catalog-style e-commerce product photo of ONLY the ${desc} shown in the attached image${positionHint(region)}.`,
-    `Isolate that one garment on a seamless, neutral light-grey studio background.`,
-    `Remove the person and any body parts, and remove every other garment, hanger, prop, logo overlay and text.`,
-    `Keep the garment's true color, fabric texture, pattern and details faithful to the original photo.`,
-    `Use soft even studio lighting with a gentle natural shadow, photorealistic.`,
-    `Center the garment and frame it as a vertical 3:4 portrait product shot.`,
-  ].join(' ');
+    'Reproduce the exact garment shown in this image as a clean catalog product photo on a neutral, seamless light-grey background, framed as a vertical 3:4 portrait.',
+    'Preserve its exact color, pattern, material, shape and details. Do NOT change the garment, do NOT substitute a different item, do NOT invent or add details.',
+    'Show only this one garment: no person, no body parts, no other items, no hanger, no props, no text.',
+    'If the garment is unclear, stay faithful to what is actually visible rather than guessing or inventing.',
+    hint
+      ? `It looks like a ${hint}, but that is only a hint; the image is the source of truth, and if they ever conflict, follow the image.`
+      : '',
+    'Use soft, even studio lighting with a gentle natural shadow, photorealistic.',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 async function inlineSource(source: GarmentImageSource): Promise<{ data: string; mimeType: string }> {
@@ -72,6 +76,25 @@ async function inlineSource(source: GarmentImageSource): Promise<{ data: string;
   throw new Error('source must include base64 or url');
 }
 
+// Reuse the verified crop (PNG/JPEG decode + region crop). Kept off the active
+// upload path; here it isolates the single garment BEFORE handing it to Gemini.
+const cropper = new CropGarmentImageProvider();
+
+/**
+ * The image actually sent to Gemini: the source CROPPED to the detected region, so
+ * only the chosen garment is in frame and the model cannot guess a different item.
+ * If the crop fails (e.g. an undecodable source), fall back to the whole image so
+ * generation still proceeds.
+ */
+async function garmentInline(request: GarmentImageRequest): Promise<{ data: string; mimeType: string }> {
+  try {
+    const cropped = await cropper.produce({ source: request.source, region: request.region });
+    return { data: cropped.base64, mimeType: cropped.mediaType };
+  } catch {
+    return inlineSource(request.source);
+  }
+}
+
 type GeminiPart = {
   text?: string;
   inlineData?: { mimeType?: string; data?: string };
@@ -82,8 +105,8 @@ export class NanoBananaImageProvider implements GarmentImageProvider {
   readonly id = 'nano-banana';
 
   async produce(request: GarmentImageRequest): Promise<GarmentImageResult> {
-    const { data, mimeType } = await inlineSource(request.source);
-    const prompt = buildPrompt(request.tags, request.region);
+    const { data, mimeType } = await garmentInline(request);
+    const prompt = buildPrompt(request.tags);
 
     const body = {
       contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data } }] }],
