@@ -19,6 +19,7 @@ import { base64ToBytes } from '@/lib/onboarding/base64';
 type Source = { uri: string; base64?: string; mediaType: string };
 type Phase = 'choose' | 'detecting' | 'pick' | 'saving' | 'done';
 const TONES: SlotTone[] = ['a', 'c', 'b'];
+const UPLOAD_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 
 function MethodCard({
   icon,
@@ -81,12 +82,13 @@ export default function ClosetAddScreen() {
   const gender = profile?.gender ?? 'unspecified';
 
   /** Upload bytes to the user's private pieces folder. Returns the path, or null. */
-  const upload = async (b64: string, suffix: string): Promise<string | null> => {
-    const path = `${user!.id}/pieces/${Date.now()}-${suffix}.jpg`;
+  const upload = async (b64: string, suffix: string, contentType = 'image/jpeg'): Promise<string | null> => {
+    const ext = UPLOAD_EXT[contentType] ?? 'jpg';
+    const path = `${user!.id}/pieces/${Date.now()}-${suffix}.${ext}`;
     try {
       const { error } = await supabase.storage
         .from('photos')
-        .upload(path, base64ToBytes(b64), { contentType: 'image/jpeg', upsert: true });
+        .upload(path, base64ToBytes(b64), { contentType, upsert: true });
       return error ? null : path;
     } catch {
       return null;
@@ -98,7 +100,7 @@ export default function ClosetAddScreen() {
   const fallbackWholePhoto = async (source: Source) => {
     setPhase('saving');
     const before = pieces ?? [];
-    const imagePath = source.base64 ? await upload(source.base64, 'photo') : null;
+    const imagePath = source.base64 ? await upload(source.base64, 'photo', source.mediaType) : null;
     const piece = await insertPiece({ user_id: user!.id, source: 'photo_library', image_url: imagePath });
     qc.invalidateQueries({ queryKey: queryKeys.pieces });
     const looks = looksUnlocked(before, [...before, piece]);
@@ -163,15 +165,17 @@ export default function ClosetAddScreen() {
     const created: Piece[] = [];
     for (let i = 0; i < picks.length; i++) {
       const g = picks[i];
-      // Crop a focused per-garment image from the photo (swappable provider).
+      // Generate a clean catalog-style image of this garment (swappable provider),
+      // guided by its detected tags so the output matches the real item.
       let imagePath: string | null = null;
       if (source.base64) {
         try {
-          const crop = await produceGarmentImage({
+          const generated = await produceGarmentImage({
             source: { base64: source.base64, mediaType: source.mediaType },
             region: g.bounding_region,
+            tags: { type: g.type, color: g.color, pattern: g.pattern, label: g.label },
           });
-          imagePath = await upload(crop.base64, `g${i}`);
+          imagePath = await upload(generated.base64, `g${i}`, generated.mediaType);
         } catch {
           // non-fatal: persist the tagged piece without a cropped image
         }

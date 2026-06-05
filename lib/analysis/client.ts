@@ -53,14 +53,16 @@ export async function detectGarments(input: DetectGarmentsInput): Promise<Detect
 }
 
 /**
- * Produce a per-garment slot image from a photo + region (the swappable
- * GarmentImageProvider; today a focused crop). Returns base64 ready to upload.
+ * Produce a per-garment slot image from a photo (+ region + tags) via the swappable
+ * GarmentImageProvider. The active provider generates a clean catalog-style image
+ * of the garment with Gemini ("Nano Banana"). Returns base64 ready to upload.
+ * Callers treat a thrown error as non-fatal (the piece saves as "needs details").
  */
 export async function produceGarmentImage(request: GarmentImageRequest): Promise<GarmentImageResult> {
-  const { data, error } = await supabase.functions.invoke<GarmentImageResult>('crop-garment', {
+  const { data, error } = await supabase.functions.invoke<GarmentImageResult>('generate-garment-image', {
     body: request,
   });
   if (error) throw error;
-  if (!data) throw new Error('crop-garment returned no data');
+  if (!data) throw new Error('generate-garment-image returned no data');
   return data;
 }

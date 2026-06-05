@@ -147,29 +147,32 @@ export async function persistOnboarding(data: OnboardingData): Promise<PersistRe
     preference_profile: buildPreferenceProfile(data),
   });
 
-  // Starter closet from the kept extracted items. Each is cropped to a focused
-  // per-garment image via the SAME shared GarmentImageProvider the closet-add flow
-  // uses, so onboarding pieces also get a real cropped image (not a full-body shot,
-  // not none). Cropping is best-effort: a failure never blocks the piece.
+  // Starter closet from the kept extracted items. Each gets a clean generated image
+  // via the SAME shared GarmentImageProvider the closet-add flow uses, so onboarding
+  // pieces also get a real per-garment image (not a full-body shot, not none).
+  // Generation is best-effort: a failure never blocks the piece.
   const firstPhotoPath = sourcePhotos[0] ?? null;
-  const cropSource = data.photos[0];
+  const imageSource = data.photos[0];
   let pieceCount = 0;
   for (let i = 0; i < data.keptItems.length; i++) {
     const item = data.keptItems[i];
     let imagePath: string | null = null;
-    if (cropSource?.base64 && item.bounding_region) {
+    if (imageSource?.base64 && item.bounding_region) {
       try {
-        const crop = await produceGarmentImage({
-          source: { base64: cropSource.base64, mediaType: cropSource.mediaType },
+        const generated = await produceGarmentImage({
+          source: { base64: imageSource.base64, mediaType: imageSource.mediaType },
           region: item.bounding_region,
+          tags: { type: item.type, color: item.color, pattern: item.pattern },
         });
-        const path = `${userId}/pieces/onboarding-${i}.jpg`;
+        const ext =
+          generated.mediaType === 'image/png' ? 'png' : generated.mediaType === 'image/webp' ? 'webp' : 'jpg';
+        const path = `${userId}/pieces/onboarding-${i}.${ext}`;
         const { error } = await supabase.storage
           .from('photos')
-          .upload(path, base64ToBytes(crop.base64), { contentType: crop.mediaType, upsert: true });
+          .upload(path, base64ToBytes(generated.base64), { contentType: generated.mediaType, upsert: true });
         if (!error) imagePath = path;
       } catch {
-        // non-fatal: keep the piece without a cropped image
+        // non-fatal: keep the piece without a generated image
       }
     }
     const piece: PieceInsert = {

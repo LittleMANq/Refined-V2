@@ -90,10 +90,20 @@ export interface GarmentImageSource {
   mediaType?: string;
 }
 
+/** Detected tags that guide the generated image to match the real garment. */
+export interface GarmentImageTags {
+  type?: string;
+  color?: string;
+  pattern?: string;
+  label?: string;
+}
+
 export interface GarmentImageRequest {
   source: GarmentImageSource;
   /** Where the garment sits in the source. Omit to use the whole image. */
   region?: GarmentRegion;
+  /** Detected tags (type/color/...) so the provider can match the real item. */
+  tags?: GarmentImageTags;
 }
 
 /** The produced per-garment slot image, ready to upload to Storage. */
@@ -103,15 +113,18 @@ export interface GarmentImageResult {
 }
 
 /**
- * The swappable garment-image step: turns a photo + region into the slot image.
+ * The swappable garment-image step: turns a photo (+ region + tags) into the slot
+ * image. Implementations are server-side; callers only ever see this interface.
  *
- * The MVP implementation is a focused CROP to the region (no background removal).
- * A real segmentation / cutout engine can replace it later by implementing this
- * same interface, with ZERO changes to callers. See
- * `supabase/functions/_shared/garment-image-crop.ts` for the crop provider.
+ * Active provider: NanoBananaImageProvider, which generates a clean catalog-style
+ * image of the garment with Gemini ('Nano Banana'). See
+ * `supabase/functions/_shared/garment-image-nanobanana.ts`.
+ * Alternative (kept, unused): CropGarmentImageProvider, a focused crop. See
+ * `supabase/functions/_shared/garment-image-crop.ts`. Swapping providers is a
+ * one-line change in the edge function, with ZERO changes to callers.
  */
 export interface GarmentImageProvider {
-  /** Stable id for logging/telemetry, e.g. 'crop' (later: 'cutout'). */
+  /** Stable id for logging/telemetry, e.g. 'nano-banana' or 'crop'. */
   readonly id: string;
   produce(request: GarmentImageRequest): Promise<GarmentImageResult>;
 }
