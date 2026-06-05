@@ -7,7 +7,7 @@
 export const colors = {
   // palette — the only colors in the system
   ink: '#1B1714',
-  paper: '#FAF7F2',
+  paper: '#F8F7F4',
   surface: '#F1ECE4',
   hairline: '#E2DBD0',
   secondary: '#8A8178',
