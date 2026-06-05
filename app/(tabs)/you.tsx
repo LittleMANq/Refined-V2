@@ -79,7 +79,11 @@ export default function YouScreen() {
         <View style={styles.heroRow}>
           <View style={styles.flex}>
             <Eyebrow style={styles.eyebrow}>{y.identityEyebrow}</Eyebrow>
-            {identity?.name ? <Text variant="serifXl">{identity.name}</Text> : null}
+            {identity?.name ? (
+              <Text variant="serifXl" style={styles.identityName}>
+                {identity.name}
+              </Text>
+            ) : null}
           </View>
           <Wordmark size={18} />
         </View>
@@ -127,7 +131,7 @@ export default function YouScreen() {
           <View style={styles.evolutionHead}>
             <Text variant="label">{y.evolutionTitle}</Text>
             <View style={styles.soon}>
-              <Text variant="mono" color={colors.gold}>
+              <Text variant="mono" color={colors.gold} style={styles.soonText}>
                 {y.soon}
               </Text>
             </View>
@@ -155,7 +159,7 @@ export default function YouScreen() {
         {/* subscription entry point (paywall not built here) */}
         <View style={styles.plus}>
           <View style={styles.plusIcon}>
-            <Icon name="star" size={20} color={colors.gold} />
+            <Icon name="sparkle" size={20} color={colors.gold} />
           </View>
           <View style={styles.flex}>
             <Text variant="label" color={colors.paper}>
@@ -178,15 +182,19 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
   flex: { flex: 1 },
   heroRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  identityName: { fontSize: 40, lineHeight: 41 },
   eyebrow: { marginBottom: spacing.md },
   description: { marginTop: spacing.md, marginBottom: spacing.xl },
   section: { marginBottom: spacing.xl },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.md },
   worldsLabel: { marginBottom: spacing.md },
   worlds: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  worldChip: { backgroundColor: colors.ink, borderRadius: 999, paddingHorizontal: 18, height: 38, alignItems: 'center', justifyContent: 'center' },
+  // Matches the gallery's `chip chip--on`: ink fill AND a 1px ink border (same
+  // footprint as every other chip in the app).
+  worldChip: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ink, borderRadius: 999, paddingHorizontal: 18, height: 38, alignItems: 'center', justifyContent: 'center' },
   evolutionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   soon: { backgroundColor: colors.gold14, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  soonText: { fontSize: 9.5 },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 7, height: 56, opacity: 0.6 },
   bar: { flex: 1, borderRadius: 6 },
   evolutionBody: { fontSize: 13.5, marginTop: spacing.md },

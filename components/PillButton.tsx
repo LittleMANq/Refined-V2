@@ -12,6 +12,8 @@ type Props = {
   onPress?: () => void;
   variant?: PillVariant;
   disabled?: boolean;
+  /** md = the full 58px CTA · sm = a lighter 50px secondary (e.g. paired footer actions). */
+  size?: 'md' | 'sm';
   /** Optional leading icon (already colored to match the variant). */
   icon?: ReactNode;
   style?: ViewStyle;
@@ -36,7 +38,7 @@ const TEXT_COLORS: Record<PillVariant, string> = {
  * one premium exception (the paywall / upgrade CTA). Ghost and surface are quiet
  * secondary actions.
  */
-export function PillButton({ label, onPress, variant = 'primary', disabled, icon, style }: Props) {
+export function PillButton({ label, onPress, variant = 'primary', disabled, size = 'md', icon, style }: Props) {
   const hasShadow = (variant === 'primary' || variant === 'gold') && !disabled;
   return (
     <Pressable
@@ -46,6 +48,7 @@ export function PillButton({ label, onPress, variant = 'primary', disabled, icon
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
+        size === 'sm' && styles.pillSm,
         { backgroundColor: BACKGROUNDS[variant] },
         variant === 'ghost' && styles.ghostBorder,
         hasShadow && shadows.pill,
@@ -55,7 +58,9 @@ export function PillButton({ label, onPress, variant = 'primary', disabled, icon
       ]}
     >
       {icon ? <View style={styles.icon}>{icon}</View> : null}
-      <Text style={[styles.label, { color: TEXT_COLORS[variant] }]}>{label}</Text>
+      <Text style={[size === 'sm' ? styles.labelSm : styles.label, { color: TEXT_COLORS[variant] }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -70,6 +75,10 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: radii.pill,
   },
+  pillSm: {
+    height: 50,
+    gap: 8,
+  },
   ghostBorder: {
     borderWidth: 1,
     borderColor: colors.hairline,
@@ -78,6 +87,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.sansMedium,
     fontSize: 17,
     lineHeight: 22,
+  },
+  labelSm: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 15,
+    lineHeight: 20,
   },
   icon: {
     flexShrink: 0,

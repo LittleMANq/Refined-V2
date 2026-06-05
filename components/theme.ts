@@ -23,6 +23,9 @@ export const colors = {
   gold28: 'rgba(176, 137, 83, 0.28)',
   paper0: 'rgba(250, 247, 242, 0)',
   paper80: 'rgba(250, 247, 242, 0.80)',
+  paper92: 'rgba(250, 247, 242, 0.92)',
+  // Warm cream-gold for captions set over a dark hero photo (gallery: #EAD9BC).
+  goldSoft: '#EAD9BC',
 } as const;
 
 /** Warm toned fills for the 3:4 garment placeholders (intentional, reserved for real photography). */

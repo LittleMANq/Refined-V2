@@ -84,6 +84,7 @@ export default function LookScreen() {
           <View style={styles.row}>
             <PillButton
               variant="surface"
+              size="sm"
               label={saved ? lk.saved : lk.save}
               onPress={save}
               icon={<Icon name="heart" size={18} color={colors.gold} />}
@@ -91,6 +92,7 @@ export default function LookScreen() {
             />
             <PillButton
               variant="surface"
+              size="sm"
               label={lk.woreIt}
               onPress={woreIt}
               disabled={wore}
@@ -101,7 +103,7 @@ export default function LookScreen() {
           <PillButton
             label={lk.swap}
             onPress={() => daily.refetch()}
-            icon={<Icon name="refresh-cw" size={19} color={colors.paper} />}
+            icon={<Icon name="swap" size={19} color={colors.paper} />}
           />
         </View>
       ) : null}

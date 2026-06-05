@@ -1,11 +1,13 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   Card,
   colors,
   Eyebrow,
+  fontFamilies,
   GarmentSlot,
   radii,
+  shadows,
   spacing,
   Text,
   type SlotTone,
@@ -32,8 +34,9 @@ type Props = {
 };
 
 /**
- * Renders a generated look: a 3:4 hero, the pieces it is made of, and the focal
- * Hebrew reasoning (the thesis). Screens add their own action footer.
+ * Renders a generated look: a 3:4 hero that floats off the page, the pieces it is
+ * made of (a horizontal rail), and the focal Hebrew reasoning (the thesis). Screens
+ * add their own action footer.
  */
 export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
   const { t } = useTranslation();
@@ -42,27 +45,37 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
 
   return (
     <View>
-      <View style={styles.hero}>
-        <GarmentSlot tone="a" radius={radii.card} scrim style={styles.heroSlot}>
-          <View style={styles.heroOverlay}>
-            {look.occasion ? (
-              <Text variant="mono" color={colors.paper} style={styles.occasion}>
-                {look.occasion}
-              </Text>
+      {/* Hero: the marquee element. Outer view carries the float shadow (no clip),
+          inner view clips the slot to the rounded card. */}
+      <View style={styles.heroShadow}>
+        <View style={styles.heroClip}>
+          <GarmentSlot tone="a" radius={radii.card} scrim style={styles.heroSlot}>
+            {!compact ? (
+              <View style={styles.whyPill}>
+                <Icon name="sparkle" size={14} color={colors.gold} />
+                <Text variant="labelSm">{t.look.whyChip}</Text>
+              </View>
             ) : null}
-            {heading ? (
-              <Text variant="serifTitle" color={colors.paper}>
-                {heading}
-              </Text>
-            ) : null}
-          </View>
-        </GarmentSlot>
+            <View style={styles.heroOverlay}>
+              {look.occasion ? (
+                <Text variant="mono" color={colors.goldSoft} style={styles.occasion}>
+                  {look.occasion}
+                </Text>
+              ) : null}
+              {heading ? (
+                <Text color={colors.paper} style={styles.heroHeading}>
+                  {heading}
+                </Text>
+              ) : null}
+            </View>
+          </GarmentSlot>
+        </View>
       </View>
 
       {compact ? (
         <Card padding={spacing.lg} style={styles.compactCard}>
           <View style={styles.whyRow}>
-            <Icon name="star" size={15} color={colors.gold} />
+            <Icon name="sparkle" size={15} color={colors.gold} />
             <Eyebrow>{t.today.whyThis}</Eyebrow>
           </View>
           <Text variant="body" style={styles.compactReasoning} numberOfLines={4}>
@@ -76,10 +89,14 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
               <Text variant="label" style={styles.piecesLabel}>
                 {t.look.composedPrefix} {lookPieces.length} {t.look.composedSuffix}
               </Text>
-              <View style={styles.pieceRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pieceRail}
+              >
                 {lookPieces.map((piece, i) => (
                   <View key={piece.id} style={styles.pieceItem}>
-                    <GarmentSlot tone={PIECE_TONES[i % PIECE_TONES.length]} width={78} radius={radii.md} />
+                    <GarmentSlot tone={PIECE_TONES[i % PIECE_TONES.length]} width={82} radius={radii.md} />
                     <Text variant="labelSm" style={styles.pieceName} numberOfLines={1}>
                       {pieceLabel(piece)}
                     </Text>
@@ -90,14 +107,14 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
                     ) : null}
                   </View>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           ) : null}
 
           <Card padding={spacing.lg} style={styles.reasoningCard}>
             <View style={styles.reasoningHead}>
               <View style={styles.reasoningIcon}>
-                <Icon name="star" size={16} color={colors.gold} />
+                <Icon name="sparkle" size={16} color={colors.gold} />
               </View>
               <Eyebrow>{t.look.reasoningTitle}</Eyebrow>
             </View>
@@ -112,17 +129,31 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: radii.card, overflow: 'hidden' },
+  heroShadow: { borderRadius: radii.card, backgroundColor: colors.surface, ...shadows.float },
+  heroClip: { borderRadius: radii.card, overflow: 'hidden' },
   heroSlot: { width: '100%', aspectRatio: 3 / 4 },
-  heroOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, gap: spacing.xs },
-  occasion: { opacity: 0.9 },
+  whyPill: {
+    position: 'absolute',
+    top: spacing.md,
+    insetInlineStart: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 28,
+    paddingHorizontal: 13,
+    borderRadius: radii.pill,
+    backgroundColor: colors.paper92,
+  },
+  heroOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 18, paddingBottom: 18 },
+  occasion: { marginBottom: 7 },
+  heroHeading: { fontFamily: fontFamilies.serifMedium, fontSize: 27, lineHeight: 30 },
   compactCard: { marginTop: spacing.md },
   whyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   compactReasoning: { lineHeight: 26 },
   pieces: { marginTop: spacing.xl },
   piecesLabel: { marginBottom: spacing.md },
-  pieceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  pieceItem: { width: 78 },
+  pieceRail: { gap: spacing.sm, paddingBottom: 2 },
+  pieceItem: { width: 82 },
   pieceName: { marginTop: 7 },
   pieceSub: { marginTop: 1, fontSize: 8.5 },
   reasoningCard: { marginTop: spacing.xl },

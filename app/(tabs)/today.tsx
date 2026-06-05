@@ -86,7 +86,7 @@ export default function TodayScreen() {
                   variant="surface"
                   label={t.today.regenerate}
                   onPress={() => daily.refetch()}
-                  icon={<Icon name="refresh-cw" size={18} color={colors.ink} />}
+                  icon={<Icon name="swap" size={18} color={colors.ink} />}
                   style={styles.actionBtn}
                 />
                 <PillButton
@@ -102,7 +102,7 @@ export default function TodayScreen() {
         <Reveal delay={stagger(2)} style={styles.quick}>
           <Pressable style={styles.flex} onPress={() => router.navigate('/closet')}>
             <Card padding={spacing.lg}>
-              <Icon name="grid" size={22} color={colors.gold} />
+              <Icon name="hanger" size={22} color={colors.gold} />
               <Text variant="label" style={styles.quickTitle}>
                 {t.today.closetCard}
               </Text>
@@ -113,7 +113,7 @@ export default function TodayScreen() {
           </Pressable>
           <Pressable style={styles.flex} onPress={() => router.navigate('/create')}>
             <Card padding={spacing.lg}>
-              <Icon name="plus-square" size={22} color={colors.gold} />
+              <Icon name="sparkle" size={22} color={colors.gold} />
               <Text variant="label" style={styles.quickTitle}>
                 {t.tabs.create}
               </Text>

@@ -19,7 +19,7 @@ import { pieceToClosetPiece, usePieces, useProfile } from '@/lib/hooks';
 function Avatar({ size = 36 }: { size?: number }) {
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Icon name="star" size={size * 0.5} color={colors.gold} />
+      <Icon name="sparkle" size={size * 0.5} color={colors.gold} />
     </View>
   );
 }
@@ -166,7 +166,7 @@ export default function StylistScreen() {
             style={[styles.send, !input.trim() && styles.sendDisabled]}
             disabled={!input.trim() || loading}
           >
-            <Icon name="arrow-up" size={20} color={colors.paper} />
+            <Icon name="send" size={20} color={colors.paper} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -183,12 +183,14 @@ const styles = StyleSheet.create({
   onlineDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: colors.gold },
   avatar: { backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   messages: { padding: spacing.gutter, gap: spacing.md },
-  row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '88%' },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, maxWidth: '88%' },
   rowMe: { alignSelf: 'flex-end' },
   rowThem: { alignSelf: 'flex-start' },
-  bubble: { paddingHorizontal: 14, paddingVertical: 11, borderRadius: 18 },
-  bubbleMe: { backgroundColor: colors.ink, borderBottomStartRadius: 6 },
-  bubbleThem: { backgroundColor: colors.white, borderBottomEndRadius: 6, ...shadows.card },
+  // The bubble leans toward its speaker: user notches its bottom-END corner, the
+  // stylist notches its bottom-START corner (beside the avatar). Matches the gallery.
+  bubble: { maxWidth: 250, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 18 },
+  bubbleMe: { backgroundColor: colors.ink, borderBottomEndRadius: 6 },
+  bubbleThem: { backgroundColor: colors.white, borderBottomStartRadius: 6, ...shadows.card },
   bubbleText: { fontSize: 15, lineHeight: 22 },
   errorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.sm },
   chipsRow: { flexGrow: 0 },

@@ -61,7 +61,7 @@ export default function CreateScreen() {
           <LookLoading message={t.ai.generating} />
         ) : needMore ? (
           <InfoState
-            icon="grid"
+            icon="plus"
             title={t.ai.needMoreTitle}
             body={t.ai.needMoreBody}
             ctaLabel={t.closet.add}
@@ -80,18 +80,17 @@ export default function CreateScreen() {
             <GeneratedLookView look={generate.data} pieces={pieces} heading={profile?.style_identity?.name} />
             <View style={styles.actions}>
               <PillButton
-                variant="surface"
+                variant="ghost"
+                size="sm"
                 label={cr.regenerate}
                 onPress={() => occasion && run(occasion)}
-                icon={<Icon name="refresh-cw" size={18} color={colors.ink} />}
-                style={styles.actionBtn}
+                icon={<Icon name="swap" size={18} color={colors.ink} />}
               />
               <PillButton
                 label={saved ? cr.saved : cr.save}
                 disabled={saved}
                 onPress={save}
                 icon={!saved ? <Icon name="heart" size={18} color={colors.paper} /> : undefined}
-                style={styles.actionBtn}
               />
             </View>
           </View>
@@ -108,6 +107,5 @@ const styles = StyleSheet.create({
   occasionLabel: { marginBottom: spacing.md },
   occasions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
   result: { marginTop: spacing.sm },
-  actions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  actionBtn: { flex: 1 },
+  actions: { gap: spacing.sm, marginTop: spacing.lg },
 });
