@@ -44,13 +44,13 @@ const SHADE: Record<'light' | 'ink', readonly [string, string]> = {
   // The inset bottom shade (deeper than before) that grounds the slot, matching the
   // gallery's `inset 0 -34px 50px -34px` shadow.
   light: ['rgba(27,23,20,0)', 'rgba(27,23,20,0.18)'],
-  ink: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.42)'],
+  ink: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)'],
 };
 // The fine diagonal "thread" weave that gives the toned placeholder its tactile,
 // fabric-like texture (gallery: repeating-linear-gradient(-45deg, …gold 0.05…)).
 const THREAD: Record<'light' | 'ink', string> = {
-  light: 'rgba(176,137,83,0.06)',
-  ink: 'rgba(176,137,83,0.16)',
+  light: 'rgba(176,137,83,0.05)',
+  ink: 'rgba(176,137,83,0.14)',
 };
 // The 1px top-edge highlight (gallery: `inset 0 1px 0 rgba(255,255,255,0.45)`).
 const TOP_EDGE: Record<'light' | 'ink', string> = {
@@ -139,7 +139,7 @@ export function GarmentSlot({
       {children}
 
       {label ? (
-        <View style={styles.labelWrap} pointerEvents="none">
+        <View style={[styles.labelWrap, isInk && styles.labelWrapInk]} pointerEvents="none">
           <Text style={[styles.label, isInk && { color: '#D8CFC2' }]} align="center">
             {label}
           </Text>
@@ -176,6 +176,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
+  labelWrapInk: {
+    backgroundColor: 'rgba(27,23,20,0.55)',
+  },
   loading: {
     position: 'absolute',
     top: 0,
@@ -189,7 +192,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fontFamilies.mono,
     fontSize: 10.5,
-    letterSpacing: 1.3,
+    letterSpacing: 1.26,
     color: colors.secondary,
     textTransform: 'uppercase',
   },

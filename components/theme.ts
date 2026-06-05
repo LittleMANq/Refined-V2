@@ -20,6 +20,7 @@ export const colors = {
   ink12: 'rgba(27, 23, 20, 0.12)',
   ink06: 'rgba(27, 23, 20, 0.06)',
   gold14: 'rgba(176, 137, 83, 0.14)',
+  gold22: 'rgba(176, 137, 83, 0.22)',
   gold28: 'rgba(176, 137, 83, 0.28)',
   paper0: 'rgba(250, 247, 242, 0)',
   paper80: 'rgba(250, 247, 242, 0.80)',
@@ -52,12 +53,18 @@ export const spacing = {
 
 export const radii = {
   sm: 8,
+  // Small gallery radii that aren't multiples of the core scale (used by tiles,
+  // chips, mini-slots, the capture frame). Named by value, mirroring the gallery.
+  r12: 12,
   md: 13,
-  lg: 18,
-  card: 24,
-  slot: 20,
+  r14: 14,
+  r15: 15,
   slotSm: 16,
-  sheet: 30,
+  lg: 18,
+  slot: 20,
+  card: 24,
+  frame: 26,
+  sheet: 28,
   pill: 999,
   chip: 999,
 } as const;
@@ -83,9 +90,9 @@ export const shadows = {
   },
   pill: {
     shadowColor: '#1B1714',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.38,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.42,
+    shadowRadius: 22,
     elevation: 10,
   },
 } as const;

@@ -8,6 +8,7 @@ import {
   Heebo_300Light,
   Heebo_400Regular,
   Heebo_500Medium,
+  Heebo_600SemiBold,
   Heebo_700Bold,
 } from '@expo-google-fonts/heebo';
 import { useFonts } from 'expo-font';
@@ -23,6 +24,7 @@ export const fontFamilies = {
   sansLight: 'Heebo_300Light',
   sansRegular: 'Heebo_400Regular',
   sansMedium: 'Heebo_500Medium',
+  sansSemibold: 'Heebo_600SemiBold',
   sansBold: 'Heebo_700Bold',
   serifRegular: 'FrankRuhlLibre_400Regular',
   serifMedium: 'FrankRuhlLibre_500Medium',
@@ -35,6 +37,7 @@ const fontMap = {
   Heebo_300Light,
   Heebo_400Regular,
   Heebo_500Medium,
+  Heebo_600SemiBold,
   Heebo_700Bold,
   FrankRuhlLibre_400Regular,
   FrankRuhlLibre_500Medium,

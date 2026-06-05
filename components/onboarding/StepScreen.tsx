@@ -14,6 +14,8 @@ type Props = {
   step?: number;
   total?: number;
   scroll?: boolean;
+  /** Body top padding. The gallery sets this per screen (10/16/22/24); defaults to 24. */
+  bodyPaddingTop?: number;
   contentStyle?: ViewStyle;
 };
 
@@ -30,9 +32,10 @@ export function StepScreen({
   step,
   total,
   scroll = true,
+  bodyPaddingTop = spacing.xl,
   contentStyle,
 }: Props) {
-  const body = <View style={[styles.body, contentStyle]}>{children}</View>;
+  const body = <View style={[styles.body, { paddingTop: bodyPaddingTop }, contentStyle]}>{children}</View>;
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <OnboardingHeader onBack={onBack} step={step} total={total} />
@@ -76,12 +79,11 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.lg,
   },
   footer: {
-    paddingHorizontal: spacing.gutter,
+    paddingHorizontal: spacing.gutter - 2,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.lg,
     gap: spacing.md,
   },
   footerFade: {
