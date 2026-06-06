@@ -16,6 +16,7 @@ import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import type { GeneratedOutfit } from '@/lib/ai';
 import type { Piece } from '@/lib/data';
+import { useSignedImageUrls } from '@/lib/hooks';
 
 const PIECE_TONES: SlotTone[] = ['a', 'c', 'b'];
 
@@ -43,13 +44,26 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
   const byId = new Map(pieces.map((p) => [p.id, p]));
   const lookPieces = look.piece_ids.map((id) => byId.get(id)).filter((p): p is Piece => !!p);
 
+  // Resolve the look's pieces' images to signed URLs, the exact pattern the closet
+  // grid uses. A piece with no image_url (or one not yet resolved) falls back to the
+  // toned placeholder, per piece. The hero uses the first piece that has an image.
+  const { data: imageUrls } = useSignedImageUrls(lookPieces.map((p) => p.image_url));
+  const pieceUri = (piece: Piece) => (piece.image_url ? imageUrls?.[piece.image_url] : undefined);
+  const heroUri = lookPieces.map(pieceUri).find(Boolean);
+
   return (
     <View>
       {/* Hero: the marquee element. Outer view carries the float shadow (no clip),
           inner view clips the slot to the rounded card. */}
       <View style={styles.heroShadow}>
         <View style={styles.heroClip}>
-          <GarmentSlot tone="a" radius={radii.card} scrim style={styles.heroSlot}>
+          <GarmentSlot
+            tone="a"
+            radius={radii.card}
+            scrim
+            style={styles.heroSlot}
+            source={heroUri ? { uri: heroUri } : undefined}
+          >
             {!compact ? (
               <View style={styles.whyPill}>
                 <Icon name="sparkle" size={14} color={colors.gold} />
@@ -96,9 +110,16 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.pieceRail}
               >
-                {lookPieces.map((piece, i) => (
+                {lookPieces.map((piece, i) => {
+                  const uri = pieceUri(piece);
+                  return (
                   <View key={piece.id} style={styles.pieceItem}>
-                    <GarmentSlot tone={PIECE_TONES[i % PIECE_TONES.length]} width={82} radius={radii.md} />
+                    <GarmentSlot
+                      tone={PIECE_TONES[i % PIECE_TONES.length]}
+                      width={82}
+                      radius={radii.md}
+                      source={uri ? { uri } : undefined}
+                    />
                     <Text variant="labelSm" style={styles.pieceName} numberOfLines={1}>
                       {pieceLabel(piece)}
                     </Text>
@@ -108,7 +129,8 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
                       </Text>
                     ) : null}
                   </View>
-                ))}
+                  );
+                })}
               </ScrollView>
             </View>
           ) : null}
