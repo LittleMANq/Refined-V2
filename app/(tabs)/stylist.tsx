@@ -11,10 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, colors, fontFamilies, Hairline, shadows, spacing, Text } from '@/components';
+import { LockedTeaser } from '@/components/app';
 import { Icon } from '@/components/onboarding';
 import { useTranslation, type Gender } from '@/i18n';
 import { stylistChat, type ChatMessage } from '@/lib/ai';
-import { pieceToClosetPiece, usePieces, useProfile } from '@/lib/hooks';
+import { pieceToClosetPiece, useFeatureFlag, usePieces, useProfile } from '@/lib/hooks';
 
 function Avatar({ size = 36 }: { size?: number }) {
   return (
@@ -41,6 +42,9 @@ function Bubble({ role, children }: { role: 'user' | 'assistant'; children: stri
 export default function StylistScreen() {
   const { t } = useTranslation();
   const s = t.stylist;
+  const sc = t.scaffold;
+  const showShopping = useFeatureFlag('shopping_recommendations');
+  const showEvent = useFeatureFlag('event_styling');
   const { data: profile } = useProfile();
   const { data: pieces } = usePieces();
 
@@ -118,6 +122,12 @@ export default function StylistScreen() {
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         >
+          {showShopping ? (
+            <LockedTeaser icon="shopping-bag" title={sc.shoppingTitle} body={sc.shoppingBody} soon={sc.soon} />
+          ) : null}
+          {showEvent ? (
+            <LockedTeaser icon="star" title={sc.eventTitle} body={sc.eventBody} soon={sc.soon} />
+          ) : null}
           <Bubble role="assistant">{s.greeting}</Bubble>
           {messages.map((m, i) => (
             <Bubble key={i} role={m.role}>

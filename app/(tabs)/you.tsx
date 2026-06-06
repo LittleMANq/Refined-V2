@@ -12,9 +12,10 @@ import {
   Text,
   Wordmark,
 } from '@/components';
+import { LockedTeaser } from '@/components/app';
 import { Icon, PaletteStrip, type IconName } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
-import { useProfile } from '@/lib/hooks';
+import { useFeatureFlag, useProfile } from '@/lib/hooks';
 
 function SettingRow({
   icon,
@@ -51,7 +52,11 @@ function SettingRow({
 export default function YouScreen() {
   const { t } = useTranslation();
   const y = t.you;
+  const sc = t.scaffold;
   const arch = t.onboarding.archetype;
+  const showEvolution = useFeatureFlag('style_evolution');
+  const showFriends = useFeatureFlag('friends');
+  const showLocation = useFeatureFlag('location_permission');
   const { data: profile, isLoading } = useProfile();
 
   if (isLoading || !profile) {
@@ -129,28 +134,42 @@ export default function YouScreen() {
           </View>
         ) : null}
 
-        {/* style evolution — scaffolded */}
-        <Card padding={spacing.lg} style={styles.section}>
-          <View style={styles.evolutionHead}>
-            <Text variant="label">{y.evolutionTitle}</Text>
-            <View style={styles.soon}>
-              <Text variant="mono" color={colors.gold} style={styles.soonText}>
-                {y.soon}
-              </Text>
+        {/* style evolution — scaffolded, gated by the style_evolution flag */}
+        {showEvolution ? (
+          <Card padding={spacing.lg} style={styles.section}>
+            <View style={styles.evolutionHead}>
+              <Text variant="label">{y.evolutionTitle}</Text>
+              <View style={styles.soon}>
+                <Text variant="mono" color={colors.gold} style={styles.soonText}>
+                  {y.soon}
+                </Text>
+              </View>
             </View>
+            <View style={styles.bars}>
+              {[26, 34, 30, 42, 38, 50, 46].map((h, i) => (
+                <View
+                  key={i}
+                  style={[styles.bar, { height: h, backgroundColor: i === 6 ? colors.gold : colors.surface }]}
+                />
+              ))}
+            </View>
+            <Text variant="subtitle" style={styles.evolutionBody}>
+              {y.evolutionBody}
+            </Text>
+          </Card>
+        ) : null}
+
+        {/* scaffolded social / context teasers */}
+        {showFriends ? (
+          <View style={styles.teaser}>
+            <LockedTeaser icon="message-circle" title={sc.friendsTitle} body={sc.friendsBody} soon={sc.soon} />
           </View>
-          <View style={styles.bars}>
-            {[26, 34, 30, 42, 38, 50, 46].map((h, i) => (
-              <View
-                key={i}
-                style={[styles.bar, { height: h, backgroundColor: i === 6 ? colors.gold : colors.surface }]}
-              />
-            ))}
+        ) : null}
+        {showLocation ? (
+          <View style={styles.teaser}>
+            <LockedTeaser icon="globe" title={sc.locationTitle} body={sc.locationBody} soon={sc.soon} />
           </View>
-          <Text variant="subtitle" style={styles.evolutionBody}>
-            {y.evolutionBody}
-          </Text>
-        </Card>
+        ) : null}
 
         {/* settings */}
         <Card padding={0} style={styles.settingsCard}>
@@ -189,6 +208,7 @@ const styles = StyleSheet.create({
   eyebrow: { marginBottom: spacing.md },
   description: { marginTop: spacing.g16, marginBottom: spacing.g26 },
   section: { marginBottom: spacing.g26 },
+  teaser: { marginBottom: spacing.g16 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.g12 },
   worldsLabel: { marginBottom: spacing.g12 },
   worlds: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g9 },

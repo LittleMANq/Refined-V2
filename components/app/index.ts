@@ -2,4 +2,5 @@
 // a token. Kept out of the main design-system barrel.
 export * from './TabBar';
 export * from './GeneratedLookView';
+export * from './LockedTeaser';
 export * from './states';

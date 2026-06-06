@@ -3,18 +3,21 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, colors, Eyebrow, PillButton, Reveal, spacing, stagger, Text, Wordmark } from '@/components';
-import { GeneratedLookView, InfoState, LookLoading } from '@/components/app';
+import { GeneratedLookView, InfoState, LockedTeaser, LookLoading } from '@/components/app';
 import { Icon, PaletteStrip } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
 import { DAILY_LOOK_MIN_PIECES } from '@/lib/closet';
-import { useDailyLook, usePieces, useProfile } from '@/lib/hooks';
+import { useDailyLook, useFeatureFlag, usePieces, useProfile } from '@/lib/hooks';
 
 export default function TodayScreen() {
   const { t } = useTranslation();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: pieces } = usePieces();
   const daily = useDailyLook();
+  const sc = t.scaffold;
+  const showWeather = useFeatureFlag('weather_styling');
+  const showEvent = useFeatureFlag('event_styling');
 
   if (profileLoading || !profile) {
     return (
@@ -54,6 +57,12 @@ export default function TodayScreen() {
           <Reveal delay={stagger(0)} style={styles.palette}>
             <PaletteStrip palette={palette} height={34} />
           </Reveal>
+        ) : null}
+
+        {showWeather ? (
+          <View style={styles.teaser}>
+            <LockedTeaser icon="sun" title={sc.weatherTitle} body={sc.weatherBody} soon={sc.soon} />
+          </View>
         ) : null}
 
         <Reveal delay={stagger(1)} style={styles.section}>
@@ -99,6 +108,12 @@ export default function TodayScreen() {
           ) : null}
         </Reveal>
 
+        {showEvent ? (
+          <View style={styles.teaser}>
+            <LockedTeaser icon="star" title={sc.eventTitle} body={sc.eventBody} soon={sc.soon} />
+          </View>
+        ) : null}
+
         <Reveal delay={stagger(2)} style={styles.quick}>
           <Pressable style={styles.flex} onPress={() => router.navigate('/closet')}>
             <Card padding={spacing.g16}>
@@ -136,6 +151,7 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: spacing.g22 },
   greeting: { marginBottom: 6 },
   palette: { marginBottom: spacing.xl },
+  teaser: { marginBottom: spacing.xl },
   section: { marginBottom: spacing.xl },
   eyebrow: { marginBottom: spacing.g12 },
   actions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, colors, PillButton, ScreenHeader, spacing, Text } from '@/components';
-import { GeneratedLookView, InfoState, LookLoading } from '@/components/app';
+import { GeneratedLookView, InfoState, LockedTeaser, LookLoading } from '@/components/app';
 import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
@@ -13,6 +13,7 @@ import {
   persistGeneratedOutfit,
   queryKeys,
   useCurrentUser,
+  useFeatureFlag,
   useGenerateOutfit,
   usePieces,
   useProfile,
@@ -27,6 +28,8 @@ export default function CreateScreen() {
   const { data: pieces } = usePieces();
   const generate = useGenerateOutfit();
   const qc = useQueryClient();
+  const sc = t.scaffold;
+  const showTryon = useFeatureFlag('virtual_tryon');
 
   const [occasion, setOccasion] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -70,6 +73,12 @@ export default function CreateScreen() {
             <Chip key={value} label={value} active={occasion === value} onPress={() => run(value)} />
           ))}
         </View>
+
+        {showTryon ? (
+          <View style={styles.teaser}>
+            <LockedTeaser icon="user" title={sc.tryonTitle} body={sc.tryonBody} soon={sc.soon} />
+          </View>
+        ) : null}
 
         {generate.isPending ? (
           <LookLoading message={t.ai.generating} />
@@ -128,4 +137,5 @@ const styles = StyleSheet.create({
   result: { marginTop: spacing.sm },
   actions: { gap: spacing.sm, marginTop: spacing.lg },
   dismiss: { alignSelf: 'center', paddingVertical: spacing.xs },
+  teaser: { marginBottom: spacing.xl },
 });

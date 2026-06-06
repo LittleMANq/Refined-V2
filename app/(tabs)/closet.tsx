@@ -4,11 +4,11 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, colors, GarmentSlot, radii, spacing, Text, Wordmark, type SlotTone } from '@/components';
-import { InfoState } from '@/components/app';
+import { InfoState, LockedTeaser } from '@/components/app';
 import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { pieceCategory, type ClosetCategory } from '@/lib/closet';
-import { usePieces, useSignedImageUrls } from '@/lib/hooks';
+import { useFeatureFlag, usePieces, useSignedImageUrls } from '@/lib/hooks';
 
 // Placeholder tone cycle, mirrors the gallery's closet grid (a, c, b repeating).
 const TONES: SlotTone[] = ['a', 'c', 'b'];
@@ -17,6 +17,8 @@ type Filter = 'all' | ClosetCategory;
 export default function ClosetScreen() {
   const { t } = useTranslation();
   const c = t.closet;
+  const sc = t.scaffold;
+  const showCollections = useFeatureFlag('collections');
   const { data: pieces, isLoading } = usePieces();
   const { data: imageUrls } = useSignedImageUrls((pieces ?? []).map((p) => p.image_url));
   const [filter, setFilter] = useState<Filter>('all');
@@ -89,6 +91,12 @@ export default function ClosetScreen() {
         ))}
       </ScrollView>
 
+      {showCollections ? (
+        <View style={styles.teaser}>
+          <LockedTeaser icon="grid" title={sc.collectionsTitle} body={sc.collectionsBody} soon={sc.soon} />
+        </View>
+      ) : null}
+
       <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
         {shown.map((piece, i) => {
           const uri = piece.image_url ? imageUrls?.[piece.image_url] : undefined;
@@ -152,4 +160,5 @@ const styles = StyleSheet.create({
   cellTitle: { marginTop: spacing.sm },
   cellSub: { marginTop: 2 },
   emptyWrap: { flex: 1, justifyContent: 'center' },
+  teaser: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm },
 });

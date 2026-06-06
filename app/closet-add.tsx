@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n';
 import { cropGarmentImage, detectGarments, produceGarmentImage, type DetectedGarment } from '@/lib/analysis';
 import { looksUnlocked } from '@/lib/closet';
 import { insertPiece, supabase, type Piece } from '@/lib/data';
-import { useCurrentUser, usePieces, useProfile, queryKeys } from '@/lib/hooks';
+import { useCurrentUser, useFeatureFlag, usePieces, useProfile, queryKeys } from '@/lib/hooks';
 import { base64ToBytes } from '@/lib/onboarding/base64';
 
 /** The picked photo we detect garments in (uri for preview, base64 to crop from). */
@@ -71,6 +71,8 @@ export default function ClosetAddScreen() {
   const { data: pieces } = usePieces();
   const { data: profile } = useProfile();
   const qc = useQueryClient();
+  const showGmail = useFeatureFlag('gmail_import');
+  const showBarcode = useFeatureFlag('barcode');
 
   const [phase, setPhase] = useState<Phase>('choose');
   const [detected, setDetected] = useState<{ source: Source; garments: DetectedGarment[] } | null>(null);
@@ -347,12 +349,16 @@ export default function ClosetAddScreen() {
             <View style={styles.cell}>
               <MethodCard icon="image" label={a.gallery} sub={a.gallerySub} onPress={() => addFrom('gallery')} />
             </View>
-            <View style={styles.cell}>
-              <MethodCard icon="mail" label={a.gmail} sub={a.gmailSub} locked soon={a.soon} />
-            </View>
-            <View style={styles.cell}>
-              <MethodCard icon="barcode" label={a.barcode} sub={a.barcodeSub} locked soon={a.soon} />
-            </View>
+            {showGmail ? (
+              <View style={styles.cell}>
+                <MethodCard icon="mail" label={a.gmail} sub={a.gmailSub} locked soon={a.soon} />
+              </View>
+            ) : null}
+            {showBarcode ? (
+              <View style={styles.cell}>
+                <MethodCard icon="barcode" label={a.barcode} sub={a.barcodeSub} locked soon={a.soon} />
+              </View>
+            ) : null}
           </View>
 
           <Pressable onPress={() => router.back()} hitSlop={8} style={styles.cancel}>

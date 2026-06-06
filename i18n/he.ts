@@ -188,6 +188,25 @@ export function he(gender: Gender) {
       plusTitle: 'Refined Plus',
       plusSub: 'לוקים ללא הגבלה וסטייליסט תמיד זמין',
     },
+    // Scaffolded "coming soon" teasers. Each surfaces only when its feature flag is
+    // on; the feature logic is not built yet. Warm, calm, builds anticipation.
+    scaffold: {
+      soon: 'בקרוב',
+      collectionsTitle: 'אוספים',
+      collectionsBody: 'הלוקים והפריטים שלך, מסודרים לאוספים משלך.',
+      weatherTitle: 'סטיילינג לפי מזג האוויר',
+      weatherBody: 'לוק שמתאים לך, וגם למזג האוויר של היום.',
+      eventTitle: 'סטיילינג לאירוע',
+      eventBody: 'חתונה, ראיון או דייט, לוק מדויק לרגע הגדול.',
+      shoppingTitle: 'המלצות קנייה',
+      shoppingBody: 'פריטים שישלימו את הארון, לפי הפלטה והגוף שלך.',
+      tryonTitle: 'מדידה וירטואלית',
+      tryonBody: 'לראות איך הלוק יושב, עוד לפני שלובשים.',
+      friendsTitle: 'חברים',
+      friendsBody: 'משוב פרטי על הלוקים שלך, מחוג קרוב ובטוח.',
+      locationTitle: 'מיקום למזג אוויר',
+      locationBody: 'נשתמש במיקום רק כדי להתאים לוקים למזג האוויר.',
+    },
     piece: {
       header: 'פריט מהארון',
       edit: g('ערכי', 'ערוך'),

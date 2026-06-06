@@ -183,6 +183,25 @@ export function en(gender: Gender) {
       plusTitle: 'Refined Plus',
       plusSub: 'Unlimited looks and a stylist always on',
     },
+    // Scaffolded "coming soon" teasers. Each surfaces only when its feature flag is
+    // on; the feature logic is not built yet. Warm, calm, builds anticipation.
+    scaffold: {
+      soon: 'Soon',
+      collectionsTitle: 'Collections',
+      collectionsBody: 'Your looks and pieces, organized into collections of your own.',
+      weatherTitle: 'Weather styling',
+      weatherBody: "A look made for you, and for today's weather.",
+      eventTitle: 'Event styling',
+      eventBody: 'A wedding, an interview or a date, a look made for the moment.',
+      shoppingTitle: 'Shopping picks',
+      shoppingBody: 'Pieces that complete your closet, matched to your palette and body.',
+      tryonTitle: 'Virtual try-on',
+      tryonBody: 'See how a look sits on you, before you wear it.',
+      friendsTitle: 'Friends',
+      friendsBody: 'Private feedback on your looks, from a close, trusted circle.',
+      locationTitle: 'Location for weather',
+      locationBody: 'Used only to tune your looks to the weather.',
+    },
     piece: {
       header: 'Closet piece',
       edit: g('Edit', 'Edit'),
