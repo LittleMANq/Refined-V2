@@ -66,3 +66,20 @@ export async function produceGarmentImage(request: GarmentImageRequest): Promise
   if (!data) throw new Error('generate-garment-image returned no data');
   return data;
 }
+
+/**
+ * Crop the source photo to a garment's region for a quick PREVIEW thumbnail at pick
+ * time (the same pure server-side geometry as the closet crop, no AI, no key). This
+ * is NOT the clean catalog image: it is just a recognizable crop of the real item to
+ * show in the selection card before the user picks. The expensive catalog image is
+ * still generated only AFTER selection, for picked items. Callers treat a thrown
+ * error as non-fatal (the card falls back to the toned placeholder slot).
+ */
+export async function cropGarmentImage(request: GarmentImageRequest): Promise<GarmentImageResult> {
+  const { data, error } = await supabase.functions.invoke<GarmentImageResult>('crop-garment', {
+    body: request,
+  });
+  if (error) throw error;
+  if (!data) throw new Error('crop-garment returned no data');
+  return data;
+}

@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +9,7 @@ import { Card, colors, Eyebrow, GarmentSlot, PillButton, radii, spacing, Text, t
 import { InfoState, LookLoading } from '@/components/app';
 import { Icon, type IconName } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
-import { detectGarments, produceGarmentImage, type DetectedGarment } from '@/lib/analysis';
+import { cropGarmentImage, detectGarments, produceGarmentImage, type DetectedGarment } from '@/lib/analysis';
 import { looksUnlocked } from '@/lib/closet';
 import { insertPiece, supabase, type Piece } from '@/lib/data';
 import { useCurrentUser, usePieces, useProfile, queryKeys } from '@/lib/hooks';
@@ -74,12 +74,44 @@ export default function ClosetAddScreen() {
 
   const [phase, setPhase] = useState<Phase>('choose');
   const [detected, setDetected] = useState<{ source: Source; garments: DetectedGarment[] } | null>(null);
+  // Preview thumbnails for the pick cards: the source photo cropped to each garment's
+  // region, keyed by garment index. Populated progressively; a missing entry keeps the
+  // card on its toned placeholder. This is NOT the catalog image (still generated post-pick).
+  const [thumbs, setThumbs] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   // The earned outcome of the last add (real new looks unlocked; never inflated).
   // `needsDetails` marks the graceful fallback where nothing was detected.
   const [result, setResult] = useState<{ added: number; looks: number; needsDetails: boolean } | null>(null);
 
   const gender = profile?.gender ?? 'unspecified';
+
+  // At pick time, fill each card with a recognizable preview: the source photo cropped
+  // to that garment's detected region (cheap server-side crop, no AI, no key). The
+  // expensive catalog image is still generated only for picked items after confirm.
+  // Best-effort and progressive: a failed or region-less crop leaves the toned slot.
+  useEffect(() => {
+    if (!detected) return;
+    const { source, garments } = detected;
+    const base64 = source.base64;
+    if (!base64) return;
+    let alive = true;
+    garments.forEach((g, i) => {
+      if (!g.bounding_region) return;
+      cropGarmentImage({
+        source: { base64, mediaType: source.mediaType },
+        region: g.bounding_region,
+      })
+        .then((res) => {
+          if (alive) setThumbs((prev) => ({ ...prev, [i]: `data:${res.mediaType};base64,${res.base64}` }));
+        })
+        .catch(() => {
+          // non-fatal: the card keeps its toned placeholder
+        });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [detected]);
 
   /** Upload bytes to the user's private pieces folder. Returns the path, or null. */
   const upload = async (b64: string, suffix: string, contentType = 'image/jpeg'): Promise<string | null> => {
@@ -133,6 +165,7 @@ export default function ClosetAddScreen() {
         context: { gender },
       });
       if (garments.length) {
+        setThumbs({}); // clear any prior previews before this detection's crops arrive
         setDetected({ source, garments });
         setSelected(new Set(garments.map((_, i) => i))); // default: all selected
         setPhase('pick');
@@ -195,6 +228,7 @@ export default function ClosetAddScreen() {
     qc.invalidateQueries({ queryKey: queryKeys.pieces });
     const looks = looksUnlocked(before, [...before, ...created]);
     setDetected(null);
+    setThumbs({});
     setResult({ added: created.length, looks, needsDetails: false });
     setPhase('done');
   };
@@ -202,6 +236,7 @@ export default function ClosetAddScreen() {
   const restart = () => {
     setResult(null);
     setDetected(null);
+    setThumbs({});
     setPhase('choose');
   };
 
@@ -253,7 +288,12 @@ export default function ClosetAddScreen() {
                 const detail = garmentDetail(g);
                 return (
                   <Card key={i} padding={spacing.md} style={[styles.pickCard, !on && styles.pickOff]}>
-                    <GarmentSlot tone={TONES[i % TONES.length]} width={64} radius={radii.sm} />
+                    <GarmentSlot
+                      tone={TONES[i % TONES.length]}
+                      source={thumbs[i] ? { uri: thumbs[i] } : undefined}
+                      width={64}
+                      radius={radii.sm}
+                    />
                     <View style={styles.pickBody}>
                       <Text variant="label" numberOfLines={1}>
                         {g.type}
