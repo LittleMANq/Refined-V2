@@ -14,27 +14,50 @@ import { CropGarmentImageProvider } from './garment-image-crop.ts';
  * The active GarmentImageProvider: generates a clean, catalog-style product image
  * of the detected garment with Google's Gemini image model ("Nano Banana").
  *
- * Fidelity first: the source photo is CROPPED to the detected bounding_region so
- * exactly ONE garment is sent to Gemini (no guessing which item), and the prompt is
- * reproduction-first (reproduce the pictured garment faithfully; the tags are a
- * hint only, the image is the source of truth). A single garment on a seamless
- * neutral background, framed 3:4, comes back.
+ * Two goals, equally hard:
  *
- * Person handling: Gemini blocks generating images derived from a recognizable
- * person (finishReason IMAGE_OTHER) when a face/head is in the crop, which is the
- * common selfie/full-body case for tops. So we try the detected crop first, and if
- * it is blocked we retry with the crop tightened to drop the head/neck, leaving only
- * garment fabric, which passes. Both attempts share one 30s budget.
+ * 1. CONSISTENCY. Every garment, of every type, from every kind of source photo,
+ *    must come back with the SAME treatment: one garment, centered, on the same
+ *    seamless neutral light background, the same 3:4 framing and scale, the same
+ *    soft contact shadow, no person, no original background. The prompt nails down
+ *    every one of those variables as hard rules so a closet grid reads uniform.
+ *
+ * 2. ROBUST PERSON REMOVAL. The common input is a person WEARING the garment (a
+ *    selfie or full-body shot). Gemini blocks generating an image derived from a
+ *    recognizable person (finishReason IMAGE_OTHER) when a face/head is in frame,
+ *    and even when it does generate it can leak the wearer's torso/skin. We defend
+ *    on three fronts: (a) the source is CROPPED to the detected region so only the
+ *    garment is sent; (b) if a crop is blocked or leaks, we retry with the crop
+ *    progressively tightened to drop the head/neck, and the prompt tells the model
+ *    to RECONSTRUCT the full garment as a standalone product even from a partial
+ *    crop; (c) we re-check the OUTPUT with a vision pass and, if a person is still
+ *    visible, retry tighter or fall back. A garment that never comes back clean
+ *    throws, so the caller stays graceful ("needs details"), never a person-in-frame.
  *
  * The Gemini key lives ONLY in the edge secret GEMINI_API_KEY, never on the client.
- * On any failure (block, error, or timeout) the caller stays graceful ("needs
- * details"). Swappable: a different image engine just implements
- * GarmentImageProvider, no caller changes.
+ * Swappable: a different image engine just implements GarmentImageProvider, no
+ * caller changes. Used by BOTH closet-add and onboarding via the one shared
+ * `generate-garment-image` endpoint, so every piece gets the same treatment.
  */
 
 const MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-2.5-flash-image';
+// A text+vision model used only to re-check the OUTPUT for a leaked person. Same
+// key and base; defaults to a fast flash model so the extra call is cheap.
+const VISION_MODEL = Deno.env.get('GEMINI_VISION_MODEL') ?? 'gemini-2.5-flash';
 const API_BASE = Deno.env.get('GEMINI_API_BASE') ?? 'https://generativelanguage.googleapis.com/v1beta';
-const TIMEOUT_MS = Number(Deno.env.get('GEMINI_TIMEOUT_MS') ?? '30000');
+const TIMEOUT_MS = Number(Deno.env.get('GEMINI_TIMEOUT_MS') ?? '55000');
+// Ask the image model for a portrait 3:4 canvas so the stored asset matches the
+// 3:4 garment slot and every image has the same shape and scale. Set to '' to let
+// the model choose (some model versions ignore imageConfig).
+const ASPECT_RATIO = Deno.env.get('GEMINI_ASPECT_RATIO') ?? '3:4';
+// Set GEMINI_VERIFY_OUTPUT=0 to skip the output person-check (still fully safe via
+// the crop + prompt defenses); on by default.
+const VERIFY_OUTPUT = (Deno.env.get('GEMINI_VERIFY_OUTPUT') ?? '1') !== '0';
+
+// Don't start a generation with less than this left; don't run the verify pass
+// with less than this left (instead, accept the image we already have).
+const GEN_MIN_MS = 8000;
+const VERIFY_MIN_MS = 4000;
 
 function apiKey(): string {
   const key = Deno.env.get('GEMINI_API_KEY');
@@ -50,23 +73,37 @@ function stripDataUrl(base64: string): string {
 }
 
 /**
- * Reproduction-first prompt: the cropped image is the source of truth, the model
- * must reproduce the pictured garment faithfully, never substitute or invent. The
- * tag is only a soft hint and the image wins on any conflict.
+ * The reproduction-first, consistency-locked prompt. The cropped image is the
+ * source of truth (reproduce the pictured garment faithfully, never substitute or
+ * invent), the tag is a soft hint only, and EVERY other variable, background,
+ * framing, scale, lighting, shadow, presentation, is fixed so the output is uniform
+ * across all garment types. Person removal and full-garment reconstruction are hard
+ * rules so a partial, worn-on-a-person crop still yields a clean standalone product.
  */
 function buildPrompt(tags?: GarmentImageTags): string {
   const hint = [tags?.color, tags?.type].filter(Boolean).join(' ').trim() || tags?.label || '';
   return [
-    'The attached image shows a single clothing garment. It may be worn by a person (for example a selfie or a full-body photo where the garment is on someone).',
-    'Extract ONLY that garment, the one the person is wearing, and render it by itself as a clean e-commerce catalog product photo, as if the garment were photographed alone.',
-    'Remove the person entirely: no person, no face, no skin, no hair, no hands or any body parts, and none of the original background.',
-    'Place the isolated garment on a neutral, seamless light-grey studio background, centered and framed as a vertical 3:4 portrait. No other items, no hanger, no props, no text.',
-    'Reproduce the garment faithfully: preserve its exact color, pattern, material, shape, cut and details. Do NOT change it, do NOT substitute a different item, do NOT invent or add details.',
-    'If the garment is partly hidden or unclear, stay faithful to what is actually visible rather than guessing or inventing.',
+    // What the input is, and the one thing to extract.
+    'The attached image shows a single clothing garment. It is often worn by a person (a selfie or a full-body photo), and the crop may be partial.',
+    'Extract ONLY that one garment and render it by itself as a clean e-commerce catalog product photo, exactly as a premium online store would shoot every product the same way.',
+    // Hard person + background removal.
+    'Remove the person and the setting completely: no person, no face, no skin, no hair, no hands, no body or body parts, no mannequin, no hanger, no props, no text, and none of the original background.',
+    // Full-garment reconstruction from a partial crop.
+    'If the garment is cropped, partly hidden, or only partly visible, reconstruct it as ONE complete, whole standalone product, plausibly completing the hidden parts (collar, shoulders, sleeves, hem, waistband) in the same exact fabric, color and pattern. Show the entire garment, not a fragment.',
+    // The fixed presentation, identical for every garment.
+    'Presentation, identical for every garment: show the garment front-facing, upright, symmetric and gently filled out as if worn by an invisible body (ghost-mannequin look), keeping its natural shape, with no body visible.',
+    // The fixed background, identical for every garment.
+    'Background, identical for every garment: a seamless, perfectly even, very light neutral warm-grey studio backdrop. The exact same flat tone edge to edge: no gradient, no vignette, no darker corners, no visible floor or wall seam, no colored cast.',
+    // The fixed framing and scale, identical for every garment.
+    'Framing, identical for every garment: a vertical 3:4 portrait. Center the garment horizontally and vertically. It should fill about 82 percent of the frame height, with even empty margin on all sides, at the same scale every time so a grid of these images looks uniform.',
+    // The fixed lighting and shadow, identical for every garment.
+    'Lighting and shadow, identical for every garment: soft, even, frontal studio light with a neutral white balance, and one subtle soft contact shadow directly beneath the garment. No hard shadows, no long shadows, no dramatic lighting.',
+    // Fidelity.
+    'Reproduce the garment faithfully: preserve its exact color, pattern, material, shape, cut and details. Do NOT change it, do NOT substitute a different item, do NOT invent or add details. If something is unclear, stay faithful to what is actually visible rather than guessing.',
     hint
       ? `It looks like a ${hint}, but that is only a hint; the image is the source of truth, and if they ever conflict, follow the image.`
       : '',
-    'Use soft, even studio lighting with a gentle natural shadow, photorealistic.',
+    'Photorealistic, high resolution.',
   ]
     .filter(Boolean)
     .join(' ');
@@ -88,7 +125,7 @@ async function inlineSource(source: GarmentImageSource): Promise<{ data: string;
 const cropper = new CropGarmentImageProvider();
 
 /**
- * The image actually sent to Gemini: the source CROPPED to the detected region, so
+ * The image actually sent to Gemini: the source CROPPED to the given region, so
  * only the chosen garment is in frame and the model cannot guess a different item.
  * If the crop fails (e.g. an undecodable source), fall back to the whole image so
  * generation still proceeds.
@@ -106,25 +143,29 @@ async function garmentInline(
 }
 
 /**
- * Tighten a region to drop the head / neck (the top portion) and a little of the
- * sides, leaving mostly garment fabric. Used only as a fallback when Gemini blocks
- * a crop that still contains a recognizable person (people-generation policy).
+ * Tighten a region by dropping its top portion (the head / neck) and insetting the
+ * sides, leaving mostly garment fabric. Used to retry when a crop is blocked or the
+ * output still leaks a person. `dropTop`/`inset` are fractions of the region.
  */
-function tightenRegion(r: GarmentRegion): GarmentRegion {
-  const dropTop = r.height * 0.35;
-  const insetX = r.width * 0.08;
+function tightenRegion(r: GarmentRegion, dropTop: number, inset: number): GarmentRegion {
+  const dy = r.height * dropTop;
+  const dx = r.width * inset;
   return {
-    x: Math.min(0.98, r.x + insetX),
-    y: Math.min(0.98, r.y + dropTop),
-    width: Math.max(0.04, r.width - insetX * 2),
-    height: Math.max(0.04, r.height - dropTop),
+    x: Math.min(0.98, r.x + dx),
+    y: Math.min(0.98, r.y + dy),
+    width: Math.max(0.04, r.width - dx * 2),
+    height: Math.max(0.04, r.height - dy),
   };
 }
 
-/** Crop attempts, best (full garment) first, then a face-excluding tighter crop. */
+/**
+ * Crop attempts, best (full garment) first, then progressively tighter crops that
+ * drop more of the top so a recognizable head/face is excluded while leaving enough
+ * fabric for the model to reconstruct the whole garment.
+ */
 function candidateRegions(region: GarmentRegion | undefined): (GarmentRegion | undefined)[] {
   if (!region) return [undefined];
-  return [region, tightenRegion(region)];
+  return [region, tightenRegion(region, 0.25, 0.07), tightenRegion(region, 0.45, 0.12)];
 }
 
 type GeminiPart = {
@@ -132,6 +173,37 @@ type GeminiPart = {
   inlineData?: { mimeType?: string; data?: string };
   inline_data?: { mime_type?: string; data?: string };
 };
+
+/** POST to a Gemini model (image or vision) with a JSON body, honoring a time budget. */
+async function geminiFetch(
+  model: string,
+  body: unknown,
+  budgetMs: number,
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(1000, budgetMs));
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Gemini request timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Gemini request failed: ${res.status} ${detail.slice(0, 300)}`);
+  }
+  return await res.json();
+}
 
 /**
  * One Gemini image call. Returns the generated image, or null when Gemini returned
@@ -144,36 +216,15 @@ async function callGemini(
   mimeType: string,
   budgetMs: number,
 ): Promise<GarmentImageResult | null> {
+  const generationConfig: Record<string, unknown> = { responseModalities: ['IMAGE'] };
+  if (ASPECT_RATIO) generationConfig.imageConfig = { aspectRatio: ASPECT_RATIO };
   const body = {
     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data } }] }],
-    generationConfig: { responseModalities: ['IMAGE'] },
+    generationConfig,
   };
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Math.max(1000, budgetMs));
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/models/${MODEL}:generateContent`, {
-      method: 'POST',
-      headers: { 'x-goog-api-key': apiKey(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('Gemini image generation timed out');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`Gemini image generation failed: ${res.status} ${detail.slice(0, 300)}`);
-  }
-
-  const json = await res.json();
+  const json = (await geminiFetch(MODEL, body, budgetMs)) as {
+    candidates?: { content?: { parts?: GeminiPart[] } }[];
+  };
   const parts: GeminiPart[] = json?.candidates?.[0]?.content?.parts ?? [];
   for (const part of parts) {
     const inline = part.inlineData ?? part.inline_data;
@@ -187,22 +238,69 @@ async function callGemini(
   return null; // no image (e.g. people-policy block); the caller may retry a tighter crop
 }
 
+/**
+ * Re-check the GENERATED image for a leaked person. Returns:
+ *  - 'clean'   the image shows only the garment, no human,
+ *  - 'person'  a human face/skin/body part is visible (retry tighter or fall back),
+ *  - 'unknown' the check could not run (error/timeout/budget): don't block on it.
+ * Best-effort: any failure resolves to 'unknown' so a flaky check never discards a
+ * good image.
+ */
+async function verifyNoPerson(
+  image: GarmentImageResult,
+  budgetMs: number,
+): Promise<'clean' | 'person' | 'unknown'> {
+  const prompt =
+    'This is a product photo. Does it contain any visible human being: a human face, head, skin, hair, hands, or any body part? Ignore the clothing itself, clothing is expected. Answer with exactly one word: PERSON if any human body part is visible, otherwise CLEAN.';
+  const body = {
+    contents: [
+      { parts: [{ text: prompt }, { inline_data: { mime_type: image.mediaType, data: image.base64 } }] },
+    ],
+    // Disable "thinking" so the one-word verdict isn't eaten by reasoning tokens.
+    generationConfig: { temperature: 0, maxOutputTokens: 16, thinkingConfig: { thinkingBudget: 0 } },
+  };
+  try {
+    const json = (await geminiFetch(VISION_MODEL, body, budgetMs)) as {
+      candidates?: { content?: { parts?: GeminiPart[] } }[];
+    };
+    const parts: GeminiPart[] = json?.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.map((p) => p.text ?? '').join(' ').toUpperCase();
+    if (text.includes('PERSON')) return 'person';
+    if (text.includes('CLEAN')) return 'clean';
+    return 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
 export class NanoBananaImageProvider implements GarmentImageProvider {
   readonly id = 'nano-banana';
 
   async produce(request: GarmentImageRequest): Promise<GarmentImageResult> {
     const deadline = Date.now() + TIMEOUT_MS;
     const prompt = buildPrompt(request.tags);
+    const regions = candidateRegions(request.region);
 
-    // Try the detected crop first; if Gemini returns no image (a person/face block),
-    // retry with the crop tightened to drop the head and neck. One shared 30s budget.
-    for (const region of candidateRegions(request.region)) {
-      const remaining = deadline - Date.now();
-      if (remaining <= 1500) break;
-      const { data, mimeType } = await garmentInline(request.source, region);
-      const result = await callGemini(prompt, data, mimeType, remaining);
-      if (result) return result;
+    // Try the detected crop first; on a policy block (no image) or a person leaked
+    // into the OUTPUT, retry with a progressively tighter crop. One shared budget.
+    for (let i = 0; i < regions.length; i++) {
+      if (deadline - Date.now() <= GEN_MIN_MS) break;
+      const { data, mimeType } = await garmentInline(request.source, regions[i]);
+      const result = await callGemini(prompt, data, mimeType, deadline - Date.now());
+      if (!result) continue; // blocked / empty: tighten and retry
+
+      const isLast = i === regions.length - 1;
+      if (!VERIFY_OUTPUT || deadline - Date.now() <= VERIFY_MIN_MS) {
+        // No budget (or verification disabled) to re-check: accept this image.
+        return result;
+      }
+      const verdict = await verifyNoPerson(result, deadline - Date.now());
+      if (verdict !== 'person') return result; // 'clean' or 'unknown' -> good enough
+      // A person leaked. If a tighter crop is still available, retry it; otherwise
+      // fall through and fail so the caller falls back to "needs details" rather
+      // than ever showing a person-in-frame image in a slot.
+      if (isLast) break;
     }
-    throw new Error('Gemini returned no image');
+    throw new Error('Gemini returned no clean garment image');
   }
 }
