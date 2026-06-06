@@ -31,11 +31,24 @@ export interface OutfitContext {
   occasion?: string;
 }
 
+/**
+ * Learned preference signal (derived from the user's saves/dismissals), the same
+ * shape as the stored `preference_profile`. The scorer biases TOWARD these, softly
+ * (a bias, never a hard filter). Absent/empty -> no effect, fully backward-compatible.
+ */
+export interface PreferenceSignals {
+  favored_colors?: string[];
+  favored_silhouettes?: string[];
+  formality_bias?: number;
+}
+
 export interface GenerateOutfitInput {
   analysis: AnalysisCore;
   styleIdentity: { name: string; description?: string };
   closet: ClosetPiece[];
   context: OutfitContext;
+  /** Learned preferences to bias scoring. Omit for a neutral (unbiased) score. */
+  preferences?: PreferenceSignals;
 }
 
 /** Transparent per-dimension scores (0..1) for the chosen look. */
@@ -46,6 +59,7 @@ export interface OutfitScore {
   silhouette: number;
   formality: number;
   consistency: number;
+  preference: number; // learned-preference bias (0.5 = neutral / no signal)
 }
 
 /** Deterministic pipeline output (pre-reasoning). */

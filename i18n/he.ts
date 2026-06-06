@@ -86,6 +86,7 @@ export function he(gender: Gender) {
       saved: 'נשמר',
       woreIt: 'לבשתי',
       swap: g('החליפי לוק', 'החלף לוק'),
+      dismiss: 'פחות בשבילי',
     },
     closet: {
       title: 'הארון שלי',
@@ -154,6 +155,7 @@ export function he(gender: Gender) {
       resultEyebrow: 'הלוק שלך',
       save: g('שמרי את הלוק', 'שמור את הלוק'),
       saved: 'הלוק נשמר',
+      dismiss: 'פחות בשבילי',
     },
     stylist: {
       title: 'הסטייליסט שלך',

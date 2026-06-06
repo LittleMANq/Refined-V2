@@ -7,9 +7,14 @@ import {
   type GeneratedOutfit,
   type GenerateOutfitInput,
 } from '../ai';
+import { derivePreferenceProfile } from '../closet';
 import {
+  getProfile,
   insertOutfit,
+  listOutfits,
+  listPieces,
   recordOutfitWear,
+  updateProfile,
   type Analysis,
   type Gender,
   type Outfit,
@@ -56,6 +61,9 @@ export function buildOutfitInput(profile: Profile, pieces: Piece[], occasion: st
       gender: (profile.gender ?? 'unspecified') as Gender,
       occasion,
     },
+    // Learned preferences bias the scorer toward what the user keeps. Omitted when
+    // the profile has none yet (a neutral, unbiased score).
+    preferences: profile.preference_profile ?? undefined,
   };
 }
 
@@ -91,13 +99,19 @@ export function useGenerateOutfit() {
   });
 }
 
-/** Persist a generated look as an outfit (the save / "I wore it" signals). */
+/**
+ * Persist a generated look and its preference signal. A SAVE (or "I wore it") is a
+ * positive signal; a DISMISS is negative. Both teach the engine: after persisting,
+ * the user's preference_profile is recomputed from the accumulated signal so the
+ * next look is more "them".
+ */
 export async function persistGeneratedOutfit(
   userId: string,
   look: GeneratedOutfit,
-  options: { saved?: boolean; worn?: boolean; nowIso?: string } = {},
+  options: { saved?: boolean; worn?: boolean; dismissed?: boolean; nowIso?: string } = {},
 ): Promise<Outfit> {
-  const { saved = true, worn = false, nowIso } = options;
+  const { worn = false, dismissed = false, nowIso } = options;
+  const saved = options.saved ?? !dismissed; // a save/wear is positive; a dismiss is not
   const wornAt = worn ? (nowIso ?? new Date().toISOString()) : null;
   const outfit = await insertOutfit({
     owner_id: userId,
@@ -107,6 +121,7 @@ export async function persistGeneratedOutfit(
     reasoning: look.reasoning,
     generated_by: 'ai',
     saved,
+    dismissed,
     logged_at: wornAt,
   });
 
@@ -122,5 +137,28 @@ export async function persistGeneratedOutfit(
       // non-fatal: wear history is a background signal, not part of the save UX
     }
   }
+
+  // Preference learning: recompute preference_profile from the accumulated
+  // saves/dismissals (this new signal included). Best-effort, never blocks the save.
+  try {
+    await updatePreferenceFromSignals(userId);
+  } catch {
+    // non-fatal: a stale preference_profile only means the next look is slightly less tuned
+  }
   return outfit;
+}
+
+/**
+ * Recompute and persist the user's preference_profile from their accumulated
+ * save/dismiss signal. Pure data + arithmetic (no AI, no keys); RLS restricts every
+ * read/write to the caller's own rows.
+ */
+export async function updatePreferenceFromSignals(userId: string): Promise<void> {
+  const [outfits, pieces, profile] = await Promise.all([
+    listOutfits(userId),
+    listPieces(userId),
+    getProfile(userId),
+  ]);
+  const next = derivePreferenceProfile(outfits, pieces, profile?.preference_profile ?? null);
+  await updateProfile(userId, { preference_profile: next });
 }

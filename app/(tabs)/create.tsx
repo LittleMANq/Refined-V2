@@ -1,6 +1,7 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, colors, PillButton, ScreenHeader, spacing, Text } from '@/components';
@@ -10,6 +11,7 @@ import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
 import {
   persistGeneratedOutfit,
+  queryKeys,
   useCurrentUser,
   useGenerateOutfit,
   usePieces,
@@ -24,6 +26,7 @@ export default function CreateScreen() {
   const { data: profile } = useProfile();
   const { data: pieces } = usePieces();
   const generate = useGenerateOutfit();
+  const qc = useQueryClient();
 
   const [occasion, setOccasion] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -37,10 +40,21 @@ export default function CreateScreen() {
     generate.mutate(value);
   };
 
+  // A save/dismiss updates preference_profile; refresh it so the next look is tuned.
+  const refreshPreferences = () => qc.invalidateQueries({ queryKey: queryKeys.profile });
+
   const save = async () => {
     if (!user || !generate.data) return;
     await persistGeneratedOutfit(user.id, generate.data, { saved: true });
     setSaved(true);
+    refreshPreferences();
+  };
+  // "Less for me": a negative preference signal, then a fresh look for the occasion.
+  const dismiss = async () => {
+    if (!user || !generate.data || !occasion) return;
+    await persistGeneratedOutfit(user.id, generate.data, { dismissed: true });
+    refreshPreferences();
+    run(occasion);
   };
 
   return (
@@ -92,6 +106,11 @@ export default function CreateScreen() {
                 onPress={save}
                 icon={!saved ? <Icon name="heart" size={18} color={colors.paper} /> : undefined}
               />
+              <Pressable onPress={dismiss} hitSlop={8} style={styles.dismiss}>
+                <Text variant="label" color={colors.secondary}>
+                  {cr.dismiss}
+                </Text>
+              </Pressable>
             </View>
           </View>
         ) : null}
@@ -108,4 +127,5 @@ const styles = StyleSheet.create({
   occasions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.g9, marginBottom: spacing.xl },
   result: { marginTop: spacing.sm },
   actions: { gap: spacing.sm, marginTop: spacing.lg },
+  dismiss: { alignSelf: 'center', paddingVertical: spacing.xs },
 });

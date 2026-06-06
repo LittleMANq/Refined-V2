@@ -81,6 +81,7 @@ export function en(gender: Gender) {
       saved: 'Saved',
       woreIt: 'I wore it',
       swap: g('Swap look', 'Swap look'),
+      dismiss: 'Not for me',
     },
     closet: {
       title: 'My closet',
@@ -149,6 +150,7 @@ export function en(gender: Gender) {
       resultEyebrow: 'Your look',
       save: g('Save the look', 'Save the look'),
       saved: 'Look saved',
+      dismiss: 'Not for me',
     },
     stylist: {
       title: 'Your stylist',

@@ -89,4 +89,41 @@ describe('selectOutfit (candidate -> score -> select)', () => {
     expect(selection).not.toBeNull();
     expect(selection!.piece_ids).toContain('o1');
   });
+
+  it('biases selection toward learned favored colors (before/after)', () => {
+    // Neutral palette so the two tops differ only by color; both equally valid.
+    const neutral = { ...base, analysis: { color_palette: { flatters: [], avoid: [] } } };
+    const closet = [
+      { id: 'tA', type: 'חולצה', color: 'כחול', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+      { id: 'tB', type: 'חולצה', color: 'ירוק', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+      { id: 'b1', type: 'מכנסיים', color: 'טאופ', attributes: { silhouette: 'ישר', formality: 'סמארט' } },
+      { id: 's1', type: 'נעליים', color: 'אפור' },
+    ];
+
+    const before = selectOutfit({ ...neutral, closet });
+    const after = selectOutfit({ ...neutral, preferences: { favored_colors: ['ירוק'] }, closet });
+
+    expect(before!.piece_ids).toContain('tA'); // a tie with no preference -> first candidate
+    expect(after!.piece_ids).toContain('tB'); // favoring ירוק flips the choice
+    expect(after!.score.preference).toBeGreaterThan(before!.score.preference); // measurable bias
+  });
+
+  it('keeps preference a bias, not a filter (palette merit still wins)', () => {
+    const closet = [
+      { id: 'tFav', type: 'חולצה', color: 'ירוק', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+      { id: 'tFlat', type: 'חולצה', color: 'חול', attributes: { silhouette: 'מחויט', formality: 'סמארט' } },
+      { id: 'b1', type: 'מכנסיים', color: 'טאופ', attributes: { silhouette: 'ישר', formality: 'סמארט' } },
+      { id: 's1', type: 'נעליים', color: 'קוניאק' },
+    ];
+    // Palette strongly flatters חול and avoids ירוק, but the user "favors" ירוק.
+    const selection = selectOutfit({
+      ...base,
+      analysis: { color_palette: { flatters: ['חול', 'טאופ', 'קוניאק'], avoid: ['ירוק'] } },
+      preferences: { favored_colors: ['ירוק'] },
+      closet,
+    });
+    // The flattering look still wins: preference nudges, it does not override merit.
+    expect(selection!.piece_ids).toContain('tFlat');
+    expect(selection!.piece_ids).not.toContain('tFav');
+  });
 });

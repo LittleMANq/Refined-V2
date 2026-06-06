@@ -186,12 +186,44 @@ function scoreConsistency(pieces: ClosetPiece[]): number {
   return 0.5 * seasonCoherent + 0.5 * formalityCoherent;
 }
 
+/**
+ * Learned-preference bias: nudges looks toward the colors / silhouettes / formality
+ * the user keeps (saves) and away from what they dismiss. A BIAS, not a filter:
+ * neutral 0.5 with no signal, and a small per-match bump that a strong score on any
+ * other dimension can still outweigh, so variety never collapses.
+ */
+function scorePreference(pieces: ClosetPiece[], prefs: GenerateOutfitInput['preferences']): number {
+  if (!prefs) return 0.5;
+  const colors = prefs.favored_colors ?? [];
+  const sils = prefs.favored_silhouettes ?? [];
+  const hasFormality = typeof prefs.formality_bias === 'number';
+  if (!colors.length && !sils.length && !hasFormality) return 0.5;
+
+  let s = 0.5;
+  for (const p of pieces) {
+    if (colors.length && matchesAny(p.color, colors)) s += 0.12;
+    if (sils.length && matchesAny(p.attributes?.silhouette, sils)) s += 0.1;
+  }
+  if (hasFormality) {
+    const ranks = pieces.map(formalityRank).filter((r): r is number => r != null);
+    if (ranks.length) {
+      const avg = ranks.reduce((a, b) => a + b, 0) / ranks.length;
+      const align = 1 - Math.min(1, Math.abs(avg - (prefs.formality_bias as number)) / 3);
+      s += (align - 0.5) * 0.2; // small lean toward the user's usual formality
+    }
+  }
+  return Math.max(0, Math.min(1, s));
+}
+
+// Weights sum to 1. Preference is a modest term so it tilts ties and close calls
+// toward learned taste without overriding palette/proportion/formality merit.
 const WEIGHTS = {
-  colorPalette: 0.35,
-  proportion: 0.2,
-  silhouette: 0.15,
-  formality: 0.2,
+  colorPalette: 0.3,
+  proportion: 0.18,
+  silhouette: 0.12,
+  formality: 0.18,
   consistency: 0.1,
+  preference: 0.12,
 };
 
 function scoreCandidate(candidate: Candidate, input: GenerateOutfitInput): OutfitScore {
@@ -201,12 +233,14 @@ function scoreCandidate(candidate: Candidate, input: GenerateOutfitInput): Outfi
   const silhouette = scoreSilhouette(candidate.pieces);
   const formality = scoreFormality(candidate.pieces, target);
   const consistency = scoreConsistency(candidate.pieces);
+  const preference = scorePreference(candidate.pieces, input.preferences);
   const total =
     colorPalette * WEIGHTS.colorPalette +
     proportion * WEIGHTS.proportion +
     silhouette * WEIGHTS.silhouette +
     formality * WEIGHTS.formality +
-    consistency * WEIGHTS.consistency;
+    consistency * WEIGHTS.consistency +
+    preference * WEIGHTS.preference;
   return {
     total: Number(total.toFixed(4)),
     colorPalette: Number(colorPalette.toFixed(3)),
@@ -214,6 +248,7 @@ function scoreCandidate(candidate: Candidate, input: GenerateOutfitInput): Outfi
     silhouette: Number(silhouette.toFixed(3)),
     formality: Number(formality.toFixed(3)),
     consistency: Number(consistency.toFixed(3)),
+    preference: Number(preference.toFixed(3)),
   };
 }
 

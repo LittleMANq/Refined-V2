@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -9,7 +10,7 @@ import { Icon } from '@/components/onboarding';
 import { useTranslation } from '@/i18n';
 import { NeedMorePiecesError } from '@/lib/ai';
 import { DAILY_LOOK_MIN_PIECES } from '@/lib/closet';
-import { persistGeneratedOutfit, useCurrentUser, useDailyLook, usePieces, useProfile } from '@/lib/hooks';
+import { persistGeneratedOutfit, queryKeys, useCurrentUser, useDailyLook, usePieces, useProfile } from '@/lib/hooks';
 
 export default function LookScreen() {
   const { t } = useTranslation();
@@ -18,6 +19,7 @@ export default function LookScreen() {
   const { data: profile } = useProfile();
   const { data: pieces } = usePieces();
   const daily = useDailyLook();
+  const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
   const [wore, setWore] = useState(false);
 
@@ -28,16 +30,30 @@ export default function LookScreen() {
       ? t.today.unlockOne
       : `${t.today.unlockManyPrefix} ${needed} ${t.today.unlockManySuffix}`;
 
+  // A save/dismiss updates preference_profile; refresh it so the next look is tuned.
+  const refreshPreferences = () => qc.invalidateQueries({ queryKey: queryKeys.profile });
+
   const save = async () => {
     if (!user || !daily.data || saved) return;
     await persistGeneratedOutfit(user.id, daily.data, { saved: true });
     setSaved(true);
+    refreshPreferences();
   };
   const woreIt = async () => {
     if (!user || !daily.data || wore) return;
     await persistGeneratedOutfit(user.id, daily.data, { saved: true, worn: true });
     setWore(true);
     setSaved(true);
+    refreshPreferences();
+  };
+  // "Less for me": a negative preference signal, then a fresh suggestion to replace it.
+  const dismiss = async () => {
+    if (!user || !daily.data) return;
+    await persistGeneratedOutfit(user.id, daily.data, { dismissed: true });
+    setSaved(false);
+    setWore(false);
+    refreshPreferences();
+    daily.refetch();
   };
 
   return (
@@ -105,6 +121,11 @@ export default function LookScreen() {
             onPress={() => daily.refetch()}
             icon={<Icon name="swap" size={19} color={colors.paper} />}
           />
+          <Pressable onPress={dismiss} hitSlop={8} style={styles.dismiss}>
+            <Text variant="label" color={colors.secondary}>
+              {lk.dismiss}
+            </Text>
+          </Pressable>
         </View>
       ) : null}
     </SafeAreaView>
@@ -126,4 +147,5 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: spacing.g22, paddingTop: spacing.md, paddingBottom: spacing.g20, gap: spacing.g11 },
   row: { flexDirection: 'row', gap: spacing.g11 },
   rowBtn: { flex: 1 },
+  dismiss: { alignSelf: 'center', paddingVertical: spacing.xs },
 });
