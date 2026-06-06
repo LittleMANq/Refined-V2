@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -46,10 +47,16 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
 
   // Resolve the look's pieces' images to signed URLs, the exact pattern the closet
   // grid uses. A piece with no image_url (or one not yet resolved) falls back to the
-  // toned placeholder, per piece. The hero uses the first piece that has an image.
+  // toned placeholder, per tile, so an imageless piece never breaks the composition.
   const { data: imageUrls } = useSignedImageUrls(lookPieces.map((p) => p.image_url));
   const pieceUri = (piece: Piece) => (piece.image_url ? imageUrls?.[piece.image_url] : undefined);
-  const heroUri = lookPieces.map(pieceUri).find(Boolean);
+
+  // The hero composes the WHOLE look (a flat-lay of its pieces' catalog images): the
+  // main garment (pipeline order puts it first) larger, the rest stacked beside it.
+  const heroPieces = lookPieces.slice(0, 4);
+  const mainPiece = heroPieces[0];
+  const mainUri = mainPiece ? pieceUri(mainPiece) : undefined;
+  const supportingPieces = heroPieces.slice(1);
 
   return (
     <View>
@@ -57,13 +64,43 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
           inner view clips the slot to the rounded card. */}
       <View style={styles.heroShadow}>
         <View style={styles.heroClip}>
-          <GarmentSlot
-            tone="a"
-            radius={radii.card}
-            scrim
-            style={styles.heroSlot}
-            source={heroUri ? { uri: heroUri } : undefined}
-          >
+          <View style={styles.hero}>
+            {/* The composed look: main garment larger, the rest stacked beside it,
+                each tile resolving its own image with a per-tile toned fallback. */}
+            <View style={styles.composition}>
+              <GarmentSlot
+                tone="a"
+                radius={radii.md}
+                style={styles.mainTile}
+                source={mainUri ? { uri: mainUri } : undefined}
+              />
+              {supportingPieces.length ? (
+                <View style={styles.supportCol}>
+                  {supportingPieces.map((piece, i) => {
+                    const uri = pieceUri(piece);
+                    return (
+                      <GarmentSlot
+                        key={piece.id}
+                        tone={PIECE_TONES[(i + 1) % PIECE_TONES.length]}
+                        radius={radii.md}
+                        style={styles.supportTile}
+                        source={uri ? { uri } : undefined}
+                      />
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+
+            {/* Scrim under the overlay so the occasion + heading stay readable. */}
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(27,23,20,0)', 'rgba(27,23,20,0.62)']}
+              start={{ x: 0, y: 0.45 }}
+              end={{ x: 0, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+
             {!compact ? (
               <View style={styles.whyPill}>
                 <Icon name="sparkle" size={14} color={colors.gold} />
@@ -84,7 +121,7 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
                 </Text>
               ) : null}
             </View>
-          </GarmentSlot>
+          </View>
         </View>
       </View>
 
@@ -155,7 +192,13 @@ export function GeneratedLookView({ look, pieces, heading, compact }: Props) {
 const styles = StyleSheet.create({
   heroShadow: { borderRadius: radii.card, backgroundColor: colors.surface, ...shadows.float },
   heroClip: { borderRadius: radii.card, overflow: 'hidden' },
-  heroSlot: { width: '100%', aspectRatio: 3 / 4 },
+  // The 3:4 hero canvas: a neutral flat-lay surface the piece tiles sit on.
+  hero: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.surface },
+  composition: { flex: 1, flexDirection: 'row', padding: spacing.sm, gap: spacing.sm },
+  // Main garment: larger, full-height. Supporting pieces: stacked, equal heights.
+  mainTile: { flex: 1.5, height: '100%' },
+  supportCol: { flex: 1, gap: spacing.sm },
+  supportTile: { width: '100%', flex: 1 },
   whyPill: {
     position: 'absolute',
     top: spacing.md,
