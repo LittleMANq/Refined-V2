@@ -7,7 +7,15 @@ import {
   type GeneratedOutfit,
   type GenerateOutfitInput,
 } from '../ai';
-import { insertOutfit, type Analysis, type Gender, type Outfit, type Piece, type Profile } from '../data';
+import {
+  insertOutfit,
+  recordOutfitWear,
+  type Analysis,
+  type Gender,
+  type Outfit,
+  type Piece,
+  type Profile,
+} from '../data';
 import { usePieces, useProfile } from './queries';
 
 /** Default occasion for the Today daily look (calm, everyday register). */
@@ -90,7 +98,8 @@ export async function persistGeneratedOutfit(
   options: { saved?: boolean; worn?: boolean; nowIso?: string } = {},
 ): Promise<Outfit> {
   const { saved = true, worn = false, nowIso } = options;
-  return insertOutfit({
+  const wornAt = worn ? (nowIso ?? new Date().toISOString()) : null;
+  const outfit = await insertOutfit({
     owner_id: userId,
     user_ids: [userId],
     piece_ids: look.piece_ids,
@@ -98,6 +107,20 @@ export async function persistGeneratedOutfit(
     reasoning: look.reasoning,
     generated_by: 'ai',
     saved,
-    logged_at: worn ? (nowIso ?? new Date().toISOString()) : null,
+    logged_at: wornAt,
   });
+
+  // When the look is marked WORN, record per-piece wear history from today (a
+  // dated wear-log row per piece; a trigger rolls it into wear_count/last_worn),
+  // so future closet-insights / weekly-progress / Wrapped have real usage to read.
+  // Best-effort: the outfit is already saved, so a wear-log hiccup never blocks
+  // the user's "I wore it" confirmation.
+  if (worn && wornAt && look.piece_ids.length) {
+    try {
+      await recordOutfitWear({ userId, outfitId: outfit.id, pieceIds: look.piece_ids, wornAtIso: wornAt });
+    } catch {
+      // non-fatal: wear history is a background signal, not part of the save UX
+    }
+  }
+  return outfit;
 }

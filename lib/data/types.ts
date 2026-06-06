@@ -305,6 +305,35 @@ export interface Database {
         };
         Relationships: [];
       };
+      piece_wears: {
+        // Append-only wear log (dated source of truth). pieces.wear_count/last_worn
+        // are a trigger-maintained rollup of these rows.
+        Row: {
+          id: string;
+          user_id: string;
+          piece_id: string;
+          outfit_id: string | null;
+          worn_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          piece_id: string;
+          outfit_id?: string | null;
+          worn_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          piece_id?: string;
+          outfit_id?: string | null;
+          worn_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       features: {
         Row: {
           key: string;
@@ -360,5 +389,8 @@ export type OutfitUpdate = Tables['outfits']['Update'];
 export type Recommendation = Tables['recommendations']['Row'];
 export type RecommendationInsert = Tables['recommendations']['Insert'];
 export type RecommendationUpdate = Tables['recommendations']['Update'];
+
+export type PieceWear = Tables['piece_wears']['Row'];
+export type PieceWearInsert = Tables['piece_wears']['Insert'];
 
 export type FeatureFlag = Tables['features']['Row'];

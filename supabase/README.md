@@ -24,13 +24,16 @@ Data model: `/docs/Refined_MVP_Structure.md` §7.
 2. `…_rls.sql` — `enable row level security` + explicit per-command policies + grants.
 3. `…_storage.sql` — private `photos` bucket + per-user object policies.
 4. `…_seed_features.sql` — seeds the 🔒/⚪ feature flags (all OFF).
+5. `…_piece_wears.sql` — append-only `piece_wears` wear log (own-row RLS, piece-
+   ownership-checked insert) + a trigger that rolls each row up into
+   `pieces.wear_count` / `last_worn`. Recording only; no insight logic.
 
 ### Reserved (future) fields — declared, not implemented
 
 `profiles.social` (`{ friends, couple_id }`), `lifestyle`, `shopping_profile`;
 `outfits.user_ids` (couple-mode cross-wardrobe membership), `weather_context`,
-`logged_at`, `rating`, `tryon_render_url`; `pieces.wear_count`, `last_worn`,
-`embedding`.
+`rating`, `tryon_render_url`; `pieces.embedding`. (`outfits.logged_at` and
+`pieces.wear_count` / `last_worn` are now WRITTEN: see migration 5, wear recording.)
 
 ## RLS — the privacy guarantee
 

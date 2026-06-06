@@ -6,5 +6,6 @@ export * from './profiles';
 export * from './pieces';
 export * from './collections';
 export * from './outfits';
+export * from './wears';
 export * from './recommendations';
 export * from './features';
