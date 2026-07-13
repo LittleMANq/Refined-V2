@@ -32,6 +32,18 @@ Three high-fidelity concept images of the Today (home) screen, generated 2026-07
 
 ---
 
+## Concept 1B — Editorial Ink, Fitted-style item stack (revision)
+`concept-1b-editorial-ink-fitted.png` · job `0a80287f-c310-4f63-9d1c-5fded482d131` · generated 2026-07-13
+
+Feedback round: the hero should read like Fitted, the outfit shown as **separate garment cutouts**, not one merged photograph.
+
+- **Hero:** a tall warm-toned card holding a stacked collage of 4-5 isolated product cutouts in worn order (blazer, silk top, trousers, loafers + bag), each with clean edges and its own soft shadow, clearly separated pieces composing one look.
+- **Palette & type:** same Editorial Ink system (paper `#FAF7F2`, ink `#1B1714`, gold `#B08953` twice per screen) with a Fitted-style italic serif accent word in the display title.
+- **Premium because:** it keeps the magazine typography while making every piece feel ownable and tappable, the Fitted mental model with Refined's warmth.
+- **Status:** the render completed on Higgsfield's side but the connector's approval was lost mid-session before the result URL could be read. View it in the Higgsfield generations history (job ID above); one further generation (2 credits) remains in reserve for a correction pass.
+
+---
+
 ## Translation notes (for the winning direction)
 
 - All three keep the locked component grammar: full-width pills, 3:4 portrait hero, hairline dividers, generous whitespace, RTL right-aligned.
@@ -42,5 +54,5 @@ Three high-fidelity concept images of the Today (home) screen, generated 2026-07
 ## Credit usage
 
 - Model: `nano-banana-pro` (billed as `nano_banana_2`), 2K, 9:16, 1 image per direction.
-- 3 generations × 2 credits = **6 credits**. No retries needed (cap was 6 generations).
-- Balance: 11.55 before → 5.55 after.
+- Round 1: 3 generations × 2 credits = 6 credits (11.55 → 5.55). No retries needed (cap was 6 generations).
+- Round 2 (Fitted-style revision): 1 generation × 2 credits (5.55 → est. 3.55). Total so far: **8 credits**, 4 of 6 allowed generations used.
