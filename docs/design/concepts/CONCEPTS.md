@@ -34,13 +34,14 @@ Three high-fidelity concept images of the Today (home) screen, generated 2026-07
 
 ## Concept 1B — Editorial Ink, Fitted-style item stack (revision)
 `concept-1b-editorial-ink-fitted.png` · job `0a80287f-c310-4f63-9d1c-5fded482d131` · generated 2026-07-13
+[Full-res PNG](https://d8j0ntlcm91z4.cloudfront.net/user_33u5nuYHdbDpVywvjjZ6eOtPaZK/hf_20260713_111522_0a80287f-c310-4f63-9d1c-5fded482d131.png)
 
 Feedback round: the hero should read like Fitted, the outfit shown as **separate garment cutouts**, not one merged photograph.
 
 - **Hero:** a tall warm-toned card holding a stacked collage of 4-5 isolated product cutouts in worn order (blazer, silk top, trousers, loafers + bag), each with clean edges and its own soft shadow, clearly separated pieces composing one look.
 - **Palette & type:** same Editorial Ink system (paper `#FAF7F2`, ink `#1B1714`, gold `#B08953` twice per screen) with a Fitted-style italic serif accent word in the display title.
 - **Premium because:** it keeps the magazine typography while making every piece feel ownable and tappable, the Fitted mental model with Refined's warmth.
-- **Status:** the render completed on Higgsfield's side but the connector's approval was lost mid-session before the result URL could be read. View it in the Higgsfield generations history (job ID above); one further generation (2 credits) remains in reserve for a correction pass.
+- **Status:** rendered; one further generation (2 credits) remains in reserve for a correction pass.
 
 ---
 
